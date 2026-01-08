@@ -60,12 +60,17 @@ def create_app() -> Flask:
         if not note:
             return existing or ""
         new_piece = f"{reviewer_name} : {note}"
+        delimiter = ";$]"
+        suffix = f"{delimiter} "
         if not existing:
-            return new_piece
-        parts = [p.strip() for p in existing.split(";") if p.strip()]
+            return f"{new_piece}{suffix}"
+        parts = [p.strip() for p in existing.split(delimiter) if p.strip()]
         if new_piece in parts:
             return existing
-        return existing + "; " + new_piece
+        base_existing = existing
+        if not base_existing.endswith(suffix):
+            base_existing = base_existing.rstrip() + suffix
+        return f"{base_existing}{new_piece}{suffix}"
 
     def refresh_cached_metrics(review_id: int):
         db = get_db()

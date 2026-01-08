@@ -35,7 +35,7 @@
           <div class="fw-semibold mb-1">Notes</div>
           {% if study.second_screening_notes %}
             <ul class="mb-0">
-              {% for note in study.second_screening_notes.split(";") %}
+              {% for note in study.second_screening_notes.split(";$]") %}
                 {% if note|trim %}
                   <li>{{ note|trim }}</li>
                 {% endif %}
