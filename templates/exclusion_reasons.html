@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Exclusion reasons</h4>
+  <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Add a new reason</h5>
+        <form method="post">
+          <input type="hidden" name="action" value="add">
+          <div class="mb-3">
+            <label class="form-label">Hierarchy (integer)</label>
+            <input class="form-control" name="hierarchy" placeholder="1" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Reason</label>
+            <input class="form-control" name="reason" placeholder="e.g., Not relevant to review scope" required>
+          </div>
+          <button class="btn btn-primary w-100">Add</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Current reasons</h5>
+        {% if not reasons %}
+          <div class="text-muted">No reasons yet.</div>
+        {% else %}
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Hierarchy</th>
+                  <th>Reason</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in reasons %}
+                <tr>
+                  <td>{{ r.id }}</td>
+                  <td>{{ r.hierarchy }}</td>
+                  <td>{{ r.reason }}</td>
+                  <td class="text-end">
+                    <form method="post" onsubmit="return confirm('Delete (deactivate) this reason?');">
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="reason_id" value="{{ r.id }}">
+                      <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="form-text">Deleted reasons are deactivated to preserve consistency in already-excluded studies.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

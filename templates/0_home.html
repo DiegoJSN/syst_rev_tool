@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Create a new review</h5>
+        <form method="post">
+          <input type="hidden" name="action" value="create">
+          <div class="mb-3">
+            <label class="form-label">Review name</label>
+            <input class="form-control" name="review_name" placeholder="e.g., Pastoralism drylands 1980–2020" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Participants (separated by ;)</label>
+            <textarea class="form-control" name="participants" rows="4" placeholder="Alice; Bob; Charlie"></textarea>
+            <div class="form-text">These names will be used for “double verification” login.</div>
+          </div>
+          <button class="btn btn-primary w-100">Create review</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Active reviews</h5>
+        {% if not reviews %}
+          <div class="text-muted">No reviews yet.</div>
+        {% else %}
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Review</th>
+                  <th>Participants</th>
+                  <th style="min-width:180px;">First screening</th>
+                  <th style="min-width:180px;">Second screening</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in reviews %}
+                <tr>
+                  <td>{{ r.id }}</td>
+                  <td>
+                    <a href="{{ url_for('review_main', review_id=r.id) }}" class="text-decoration-none">
+                      {{ r.review_name }}
+                    </a>
+                  </td>
+                  <td>
+                    <div class="small text-muted">{{ r.participants_number }} participants</div>
+                    <div class="small">{{ r.participants_name }}</div>
+                  </td>
+                  <td>
+                    <div class="progress" style="height: 14px;">
+                      <div class="progress-bar bg-success" role="progressbar" style="width: {{ r.first_screening_progress }}%">
+                        {{ r.first_screening_progress }}%
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="progress" style="height: 14px;">
+                      <div class="progress-bar bg-success" role="progressbar" style="width: {{ r.second_screening_progress }}%">
+                        {{ r.second_screening_progress }}%
+                      </div>
+                    </div>
+                  </td>
+                  <td class="text-end">
+                    <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" onsubmit="return confirm('Delete this review and all its data?');">
+                      <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

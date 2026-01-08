@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-0">First screening conflicts</h4>
+    <div class="text-muted small">Resolver: {{ reviewer_name }}</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
+</div>
+
+{% if not studies %}
+  <div class="alert alert-success">No conflicts to resolve.</div>
+{% else %}
+  <div class="row g-3">
+    {% for s in studies %}
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="small text-muted">Study ID {{ s.id }}</div>
+            <h5 class="mb-1">{{ s.title or "Untitled" }}</h5>
+            <div class="small text-muted">{{ s.authors }}</div>
+            {% if s.doi %}
+              <div class="mt-2"><a href="{{ doi_url(s.doi) }}" target="_blank" rel="noopener">DOI: {{ s.doi }}</a></div>
+            {% endif %}
+
+            <hr>
+            <div class="fw-semibold mb-2">Conflict between</div>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr><th>Reviewer</th><th>Decision</th></tr>
+                </thead>
+                <tbody>
+                  {% for row in conflicts_map.get(s.id, []) %}
+                    <tr>
+                      <td>{{ row.reviewer_name }}</td>
+                      <td><span class="badge text-bg-light">{{ row.decision }}</span></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Abstract</div>
+              <div class="text-muted" style="white-space: pre-wrap;">{{ s.abstract or "" }}</div>
+            </div>
+
+            <form method="post" class="mt-2">
+              <input type="hidden" name="study_id" value="{{ s.id }}">
+              <div class="mb-2">
+                <label class="form-label">Notes (optional)</label>
+                <textarea class="form-control" name="notes" rows="2"></textarea>
+              </div>
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <div class="fw-semibold me-2">Final decision:</div>
+                <button class="btn btn-success" name="final_decision" value="yes">Yes</button>
+                <button class="btn btn-danger" name="final_decision" value="no">No</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

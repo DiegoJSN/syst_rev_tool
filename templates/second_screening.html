@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-0">Second screening</h4>
+    <div class="text-muted small">Reviewer: {{ reviewer_name }}</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
+</div>
+
+{% if not study %}
+  <div class="alert alert-info">No pending studies available for you.</div>
+{% else %}
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="small text-muted">Study ID {{ study.id }}</div>
+      <h5 class="mb-1">{{ study.title or "Untitled" }}</h5>
+      <div class="small text-muted">{{ study.authors }}</div>
+      {% if study.doi %}
+        <div class="mt-2">
+          <a href="{{ doi_url(study.doi) }}" target="_blank" rel="noopener">DOI: {{ study.doi }}</a>
+        </div>
+      {% endif %}
+
+      <hr>
+      <div class="mb-3">
+        <div class="fw-semibold mb-1">Abstract</div>
+        <div class="text-muted" style="white-space: pre-wrap;">{{ study.abstract or "" }}</div>
+      </div>
+
+      <form method="post" id="secondForm">
+        <input type="hidden" name="study_id" value="{{ study.id }}">
+
+        <div class="mb-3">
+          <label class="form-label">Notes (optional)</label>
+          <textarea class="form-control" name="notes" rows="2" placeholder="Any quick note..."></textarea>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <button class="btn btn-success" name="action" value="include">Include</button>
+
+          <button class="btn btn-danger" type="button" onclick="showExcludeUI()">Exclude</button>
+
+          <div id="excludeUI" class="d-none d-flex flex-wrap gap-2 align-items-center">
+            <select class="form-select form-select-sm" name="reason_id" style="min-width: 340px;">
+              <option value="">Select exclusion reason</option>
+              {% for r in reasons %}
+                <option value="{{ r.id }}">{{ r.hierarchy }} — {{ r.reason }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-danger btn-sm" name="action" value="exclude">Send</button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

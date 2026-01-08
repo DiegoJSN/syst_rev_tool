@@ -1,0 +1,13 @@
+body { background: #f6f7fb; }
+.card { border: 0; border-radius: 14px; }
+.card-title { font-weight: 650; }
+.mini-stat {
+  background: #f9fafb;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.mini-stat .label { font-size: 12px; color: #6c757d; }
+.mini-stat .value { font-size: 18px; font-weight: 700; }
+.row-yes { background: rgba(25, 135, 84, 0.08) !important; }
+.row-no { background: rgba(220, 53, 69, 0.08) !important; }
