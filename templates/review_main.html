@@ -2,8 +2,8 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
   <div>
-    <h3 class="mb-1">Review {{ review.id }}</h3>
-    <div class="text-muted">{{ review.review_name }}</div>
+    <h3 class="mb-1">{{ review.review_name }}</h3>
+    <div class="text-muted">Review {{ review.id }}</div>
   </div>
   <div class="text-end">
     {% if logged %}
@@ -172,6 +172,9 @@
               <h5 class="card-title mb-0">Second screening (Full-text)</h5>
               <div class="text-muted small">Progress: {{ review.second_screening_progress }}%</div>
             </div>
+            <div class="mt-2">
+              <a class="btn btn-outline-dark" href="{{ url_for('exclusion_reasons', review_id=review.id) }}">Edit exclusion reasons</a>
+            </div>
             <div class="progress my-2" style="height: 14px;">
               <div class="progress-bar bg-success" style="width: {{ review.second_screening_progress }}%">{{ review.second_screening_progress }}%</div>
             </div>
@@ -201,7 +204,6 @@
               <a class="btn btn-primary" href="{{ url_for('second_screening', review_id=review.id) }}">Continue</a>
               <a class="btn btn-warning" href="{{ url_for('second_screening_conflicts', review_id=review.id) }}">Resolve conflicts</a>
               <a class="btn btn-outline-secondary" href="{{ url_for('second_screening_contributions', review_id=review.id) }}">Team contribution</a>
-              <a class="btn btn-outline-dark" href="{{ url_for('exclusion_reasons', review_id=review.id) }}">Exclusion reasons</a>
             </div>
 
             <div class="form-text mt-2">Second screening considers only studies included in first screening.</div>
