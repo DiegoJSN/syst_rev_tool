@@ -601,8 +601,8 @@ def create_app() -> Flask:
                 for e in errors:
                     flash(e, "error")
                 flash(
-                    f"Imported {inserted} studies (duplicates ignored). "
-                    f"Removed {deleted} duplicated studies.",
+                    f"Imported {inserted} studies in total. "
+                    f"{deleted} duplicated studies were detected and removed.",
                     "success",
                 )
                 return redirect(url_for("review_main", review_id=review_id))
