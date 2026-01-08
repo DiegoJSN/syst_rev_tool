@@ -339,7 +339,7 @@ def create_app() -> Flask:
                     year_int = None
 
             try:
-                cur = db.execute(
+                db.execute(
                     """
                     INSERT OR IGNORE INTO studies
                     (id_review, document_type, doi, title, authors, year, abstract, source_title)
@@ -347,7 +347,8 @@ def create_app() -> Flask:
                     """,
                     (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                 )
-                if cur.rowcount == 1:
+                changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
+                if changes == 1:
                     inserted += 1
                 else:
                     duplicates += 1
@@ -380,7 +381,7 @@ def create_app() -> Flask:
                         year_int = None
 
                 try:
-                    cur = db.execute(
+                    db.execute(
                         """
                         INSERT OR IGNORE INTO studies
                         (id_review, document_type, doi, title, authors, year, abstract, source_title)
@@ -388,7 +389,8 @@ def create_app() -> Flask:
                         """,
                         (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                     )
-                    if cur.rowcount == 1:
+                    changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
+                    if changes == 1:
                         inserted += 1
                     else:
                         duplicates += 1
