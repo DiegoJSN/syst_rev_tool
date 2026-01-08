@@ -44,8 +44,8 @@
               <td>{{ r.authors }}</td>
               <td>{{ r.year }}</td>
               <td class="small text-muted text-nowrap">
-                {% if r.abstract and r.abstract|length > 500 %}
-                  {{ r.abstract[:500] }}…
+                {% if r.abstract and r.abstract|length > 20 %}
+                  {{ r.abstract[:20] }}…
                 {% else %}
                   {{ r.abstract }}
                 {% endif %}
