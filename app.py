@@ -675,6 +675,8 @@ def create_app() -> Flask:
         ).fetchone()["c"]
 
         logged = session.get("login") if session.get("login", {}).get("review_id") == review_id else None
+        duplicates_removed = review["duplicates_removed"] or 0
+        total_loaded = total + duplicates_removed
 
         return render_template(
             "review_main.html",
@@ -683,7 +685,8 @@ def create_app() -> Flask:
             names1=names1,
             names2=names2,
             total=total,
-            duplicates_removed=review["duplicates_removed"] or 0,
+            duplicates_removed=duplicates_removed,
+            total_loaded=total_loaded,
             first_pending=first_pending,
             first_conflicts=first_conflicts,
             first_done=first_done,
