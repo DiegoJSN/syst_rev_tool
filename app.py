@@ -644,6 +644,10 @@ def create_app() -> Flask:
             "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included IN ('yes','no');",
             (review_id,),
         ).fetchone()["c"]
+        first_irrelevant = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included = 'no';",
+            (review_id,),
+        ).fetchone()["c"]
 
         second_pending = db.execute(
             """
@@ -658,6 +662,10 @@ def create_app() -> Flask:
         ).fetchone()["c"]
         second_done = db.execute(
             "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included IN ('yes','no');",
+            (review_id,),
+        ).fetchone()["c"]
+        second_excluded = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included = 'no';",
             (review_id,),
         ).fetchone()["c"]
 
@@ -679,9 +687,11 @@ def create_app() -> Flask:
             first_pending=first_pending,
             first_conflicts=first_conflicts,
             first_done=first_done,
+            first_irrelevant=first_irrelevant,
             second_pending=second_pending,
             second_conflicts=second_conflicts,
             second_done=second_done,
+            second_excluded=second_excluded,
             to_extract=to_extract,
             logged=logged,
         )
