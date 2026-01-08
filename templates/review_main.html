@@ -113,9 +113,9 @@
             <h5 class="card-title">Overall</h5>
             <div class="d-flex flex-wrap gap-3">
               <div class="badge text-bg-light p-2">Total studies loaded: <span class="fw-semibold">{{ total_loaded }}</span></div>
-              <div class="badge text-bg-light p-2">Total studies (no duplicates): <span class="fw-semibold">{{ total }}</span></div>
-              <div class="badge text-bg-light p-2">Studies to extract: <span class="fw-semibold">{{ to_extract }}</span></div>
               <div class="badge text-bg-light p-2">Duplicates removed: <span class="fw-semibold">{{ duplicates_removed }}</span></div>
+              <div class="badge text-bg-light p-2">Total studies (no duplicates): <span class="fw-semibold">{{ total }}</span></div>
+              <div class="badge text-bg-light p-2">Studies to extract (Third screening): <span class="fw-semibold">{{ to_extract }}</span></div>
             </div>
             <div class="mt-3">
               <a class="btn btn-outline-dark" href="{{ url_for('list_of_studies', review_id=review.id) }}">List of studies</a>
