@@ -1130,6 +1130,7 @@ def create_app() -> Flask:
         rows = db.execute(
             """
             SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
                    er.reason AS exclusion_reason_text
             FROM studies s
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
