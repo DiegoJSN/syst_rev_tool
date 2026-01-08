@@ -32,6 +32,20 @@
         <input type="hidden" name="study_id" value="{{ study.id }}">
 
         <div class="mb-3">
+          <div class="fw-semibold mb-1">Notes</div>
+          {% if study.second_screening_notes %}
+            <ul class="mb-0">
+              {% for note in study.second_screening_notes.split(";") %}
+                {% if note|trim %}
+                  <li>{{ note|trim }}</li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="text-muted small">No notes yet.</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
           <label class="form-label">Notes (optional)</label>
           <textarea class="form-control" name="notes" rows="2" placeholder="Any quick note..."></textarea>
         </div>
