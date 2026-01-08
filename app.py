@@ -610,10 +610,11 @@ def create_app() -> Flask:
                             errors.append(f"Scopus import failed: {e}")
 
                 deleted = delete_empty_studies(review_id)
-                if duplicates:
+                removed = duplicates + deleted
+                if removed:
                     db.execute(
                         "UPDATE review SET duplicates_removed = duplicates_removed + ? WHERE id = ?;",
-                        (duplicates, review_id),
+                        (removed, review_id),
                     )
                     db.commit()
                 refresh_cached_metrics(review_id)
@@ -621,7 +622,7 @@ def create_app() -> Flask:
                     flash(e, "error")
                 flash(
                     f"Imported {inserted} studies in total. "
-                    f"{deleted} duplicated studies were detected and removed.",
+                    f"{removed} duplicate/empty studies were detected and removed.",
                     "success",
                 )
                 return redirect(url_for("review_main", review_id=review_id))
