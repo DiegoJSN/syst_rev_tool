@@ -277,18 +277,21 @@ def create_app() -> Flask:
         if d1 == d2 == "yes":
             outcome = "yes"
         elif d1 == d2 == "no":
-            outcome = "no"
-            candidates = [r for r in [r1, r2] if r is not None]
-            if candidates:
-                q = ",".join("?" for _ in candidates)
-                rows = db.execute(
-                    f"SELECT id, hierarchy FROM exclusion_reasons WHERE id IN ({q});",
-                    tuple(candidates),
-                ).fetchall()
-                if rows:
-                    exclusion_reason = sorted(rows, key=lambda x: x["hierarchy"])[0]["id"]
-                else:
-                    exclusion_reason = candidates[0]
+            if r1 != r2:
+                outcome = "conflict"
+            else:
+                outcome = "no"
+                candidates = [r for r in [r1, r2] if r is not None]
+                if candidates:
+                    q = ",".join("?" for _ in candidates)
+                    rows = db.execute(
+                        f"SELECT id, hierarchy FROM exclusion_reasons WHERE id IN ({q});",
+                        tuple(candidates),
+                    ).fetchall()
+                    if rows:
+                        exclusion_reason = sorted(rows, key=lambda x: x["hierarchy"])[0]["id"]
+                    else:
+                        exclusion_reason = candidates[0]
         elif set([d1, d2]) == set(["yes", "no"]):
             outcome = "conflict"
 
