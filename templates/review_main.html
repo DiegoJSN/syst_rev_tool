@@ -79,6 +79,37 @@
       <div class="col-12">
         <div class="card shadow-sm">
           <div class="card-body">
+            <h5 class="card-title">Log in as</h5>
+            <form method="post">
+              <input type="hidden" name="action" value="login">
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <select class="form-select" name="login_name_1" required>
+                    <option value="">Select your name</option>
+                    {% for n in names1 %}
+                      <option value="{{ n }}">{{ n }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <select class="form-select" name="login_name_2" required>
+                    <option value="">Select your name again</option>
+                    {% for n in names2 %}
+                      <option value="{{ n }}">{{ n }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-success mt-3">Log in</button>
+              <div class="form-text mt-2">Double verification required.</div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
             <h5 class="card-title">Overall</h5>
             <div class="d-flex flex-wrap gap-3">
               <div class="badge text-bg-light p-2">Total studies: <span class="fw-semibold">{{ total }}</span></div>
@@ -174,37 +205,6 @@
             </div>
 
             <div class="form-text mt-2">Second screening considers only studies included in first screening.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">Log in as</h5>
-            <form method="post">
-              <input type="hidden" name="action" value="login">
-              <div class="row g-2">
-                <div class="col-md-6">
-                  <select class="form-select" name="login_name_1" required>
-                    <option value="">Select your name</option>
-                    {% for n in names1 %}
-                      <option value="{{ n }}">{{ n }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <select class="form-select" name="login_name_2" required>
-                    <option value="">Select your name again</option>
-                    {% for n in names2 %}
-                      <option value="{{ n }}">{{ n }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
-              <button class="btn btn-success mt-3">Log in</button>
-              <div class="form-text mt-2">Double verification required.</div>
-            </form>
           </div>
         </div>
       </div>
