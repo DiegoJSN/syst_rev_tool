@@ -1188,7 +1188,9 @@ def create_app() -> Flask:
                 r["second_screening_included"] or "",
                 r["second_screening_notes"] or "",
                 " ".join(
-                    part for part in [r["exclusion_reason_hierarchy"], r["exclusion_reason_text"]] if part
+                    str(part)
+                    for part in [r["exclusion_reason_hierarchy"], r["exclusion_reason_text"]]
+                    if part
                 ),
             ])
 
