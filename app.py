@@ -299,13 +299,13 @@ def create_app() -> Flask:
             )
         db.commit()
 
-    def import_wos_xls(review_id: int, path: str) -> int:
+    def import_wos_xls(review_id: int, path: str) -> tuple[int, int]:
         db = get_db()
         wb = CalamineWorkbook.from_path(path)
         sheet = wb.get_sheet_by_index(0)
         rows = sheet.to_python()
         if not rows:
-            return 0
+            return 0, 0
 
         headers = [str(h).strip() for h in rows[0]]
         idx = {h: i for i, h in enumerate(headers)}
@@ -321,6 +321,7 @@ def create_app() -> Flask:
             return s if s else None
 
         inserted = 0
+        duplicates = 0
         for row in rows[1:]:
             doc_type = get(row, "Document Type")
             doi = normalize_doi(get(row, "DOI"))
@@ -338,7 +339,7 @@ def create_app() -> Flask:
                     year_int = None
 
             try:
-                cur = db.execute(
+                db.execute(
                     """
                     INSERT OR IGNORE INTO studies
                     (id_review, document_type, doi, title, authors, year, abstract, source_title)
@@ -346,17 +347,21 @@ def create_app() -> Flask:
                     """,
                     (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                 )
-                if cur.rowcount == 1:
+                changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
+                if changes == 1:
                     inserted += 1
+                else:
+                    duplicates += 1
             except Exception:
                 continue
 
         db.commit()
-        return inserted
+        return inserted, duplicates
 
-    def import_scopus_csv(review_id: int, path: str) -> int:
+    def import_scopus_csv(review_id: int, path: str) -> tuple[int, int]:
         db = get_db()
         inserted = 0
+        duplicates = 0
         with open(path, "r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
             for r in reader:
@@ -376,7 +381,7 @@ def create_app() -> Flask:
                         year_int = None
 
                 try:
-                    cur = db.execute(
+                    db.execute(
                         """
                         INSERT OR IGNORE INTO studies
                         (id_review, document_type, doi, title, authors, year, abstract, source_title)
@@ -384,13 +389,16 @@ def create_app() -> Flask:
                         """,
                         (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                     )
-                    if cur.rowcount == 1:
+                    changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
+                    if changes == 1:
                         inserted += 1
+                    else:
+                        duplicates += 1
                 except Exception:
                     continue
 
         db.commit()
-        return inserted
+        return inserted, duplicates
 
     def delete_empty_studies(review_id: int) -> int:
         db = get_db()
@@ -573,6 +581,7 @@ def create_app() -> Flask:
                 wos = request.files.get("wos_file")
                 scopus = request.files.get("scopus_file")
                 inserted = 0
+                duplicates = 0
                 deleted = 0
                 errors = []
 
@@ -582,7 +591,9 @@ def create_app() -> Flask:
                     else:
                         path = save_upload(wos)
                         try:
-                            inserted += import_wos_xls(review_id, path)
+                            wos_inserted, wos_duplicates = import_wos_xls(review_id, path)
+                            inserted += wos_inserted
+                            duplicates += wos_duplicates
                         except Exception as e:
                             errors.append(f"WoS import failed: {e}")
 
@@ -592,17 +603,26 @@ def create_app() -> Flask:
                     else:
                         path = save_upload(scopus)
                         try:
-                            inserted += import_scopus_csv(review_id, path)
+                            scopus_inserted, scopus_duplicates = import_scopus_csv(review_id, path)
+                            inserted += scopus_inserted
+                            duplicates += scopus_duplicates
                         except Exception as e:
                             errors.append(f"Scopus import failed: {e}")
 
                 deleted = delete_empty_studies(review_id)
+                removed = duplicates + deleted
+                if removed:
+                    db.execute(
+                        "UPDATE review SET duplicates_removed = duplicates_removed + ? WHERE id = ?;",
+                        (removed, review_id),
+                    )
+                    db.commit()
                 refresh_cached_metrics(review_id)
                 for e in errors:
                     flash(e, "error")
                 flash(
                     f"Imported {inserted} studies in total. "
-                    f"{deleted} duplicated studies were detected and removed.",
+                    f"{removed} duplicate/empty studies were detected and removed.",
                     "success",
                 )
                 return redirect(url_for("review_main", review_id=review_id))
@@ -655,6 +675,7 @@ def create_app() -> Flask:
             names1=names1,
             names2=names2,
             total=total,
+            duplicates_removed=review["duplicates_removed"] or 0,
             first_pending=first_pending,
             first_conflicts=first_conflicts,
             first_done=first_done,
