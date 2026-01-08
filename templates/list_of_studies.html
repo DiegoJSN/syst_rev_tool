@@ -34,7 +34,7 @@
         </thead>
         <tbody>
           {% for r in rows %}
-            <tr class="{% if r.second_screening_included == 'yes' %}row-yes{% else %}row-no{% endif %}">
+            <tr class="{% if r.second_screening_included|trim|lower == 'yes' %}row-yes{% else %}row-no{% endif %}">
               <td>{{ r.id }}</td>
               <td>
                 {% if r.doi %}
