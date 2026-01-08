@@ -392,6 +392,30 @@ def create_app() -> Flask:
         db.commit()
         return inserted
 
+    def delete_empty_studies(review_id: int) -> int:
+        db = get_db()
+        cur = db.execute(
+            """
+            DELETE FROM studies
+            WHERE id_review = ?
+              AND document_type IS NULL
+              AND doi IS NULL
+              AND title IS NULL
+              AND authors IS NULL
+              AND year IS NULL
+              AND abstract IS NULL
+              AND source_title IS NULL
+              AND first_screening_included IS NULL
+              AND first_screening_notes IS NULL
+              AND second_screening_included IS NULL
+              AND second_screening_notes IS NULL
+              AND exclusion_reason IS NULL;
+            """,
+            (review_id,),
+        )
+        db.commit()
+        return cur.rowcount
+
     # ---------- routes ----------
 
     @app.route("/")
@@ -549,6 +573,7 @@ def create_app() -> Flask:
                 wos = request.files.get("wos_file")
                 scopus = request.files.get("scopus_file")
                 inserted = 0
+                deleted = 0
                 errors = []
 
                 if wos and wos.filename:
@@ -571,10 +596,15 @@ def create_app() -> Flask:
                         except Exception as e:
                             errors.append(f"Scopus import failed: {e}")
 
+                deleted = delete_empty_studies(review_id)
                 refresh_cached_metrics(review_id)
                 for e in errors:
                     flash(e, "error")
-                flash(f"Imported {inserted} studies (duplicates ignored).", "success")
+                flash(
+                    f"Imported {inserted} studies (duplicates ignored). "
+                    f"Removed {deleted} empty rows.",
+                    "success",
+                )
                 return redirect(url_for("review_main", review_id=review_id))
 
         refresh_cached_metrics(review_id)
