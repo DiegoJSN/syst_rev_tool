@@ -3,12 +3,14 @@
 {% block content %}
 <style>
   /* Force row background colors even when DataTables/Bootstrap striping/hover are enabled */
-  #studiesTable tbody tr.row-yes td { background-color: #d1e7dd !important; } /* light green */
-  #studiesTable tbody tr.row-no  td { background-color: #f8d7da !important; } /* light red/pink */
+  #studiesTable tbody tr.row-yes  td { background-color: #d1e7dd !important; } /* light green */
+  #studiesTable tbody tr.row-no   td { background-color: #f8d7da !important; } /* light red/pink */
+  #studiesTable tbody tr.row-none td { background-color: #e9ecef !important; } /* light gray */
 
   /* Keep hover consistent */
-  #studiesTable.table-hover tbody tr.row-yes:hover td { background-color: #c7e2d5 !important; }
-  #studiesTable.table-hover tbody tr.row-no:hover  td { background-color: #f5c2c7 !important; }
+  #studiesTable.table-hover tbody tr.row-yes:hover  td { background-color: #c7e2d5 !important; }
+  #studiesTable.table-hover tbody tr.row-no:hover   td { background-color: #f5c2c7 !important; }
+  #studiesTable.table-hover tbody tr.row-none:hover td { background-color: #dde2e6 !important; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -45,7 +47,16 @@
         </thead>
         <tbody>
           {% for r in rows %}
-            <tr class="{% if r.second_screening_included|trim|lower == 'yes' %}row-yes{% else %}row-no{% endif %}">
+            <tr class="
+              {% set v = (r.second_screening_included|string)|trim|lower %}
+              {% if v == 'yes' %}
+                row-yes
+              {% elif v == 'none' %}
+                row-none
+              {% else %}
+                row-no
+              {% endif %}
+            ">
               <td>{{ r.id }}</td>
               <td>
                 {% if r.doi %}
