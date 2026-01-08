@@ -1152,6 +1152,7 @@ def create_app() -> Flask:
         rows = db.execute(
             """
             SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
                    er.reason AS exclusion_reason_text
             FROM studies s
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
@@ -1186,7 +1187,9 @@ def create_app() -> Flask:
                 r["first_screening_notes"] or "",
                 r["second_screening_included"] or "",
                 r["second_screening_notes"] or "",
-                r["exclusion_reason_text"] or "",
+                " ".join(
+                    part for part in [r["exclusion_reason_hierarchy"], r["exclusion_reason_text"]] if part
+                ),
             ])
 
         out_path = os.path.join(app.instance_path, f"review_{review_id}_studies.xlsx")
