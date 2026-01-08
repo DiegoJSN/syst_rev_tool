@@ -36,7 +36,8 @@ def init_db(app):
             participants_number INTEGER NOT NULL DEFAULT 0,
             participants_name TEXT NOT NULL DEFAULT '',
             first_screening_progress INTEGER NOT NULL DEFAULT 0,
-            second_screening_progress INTEGER NOT NULL DEFAULT 0
+            second_screening_progress INTEGER NOT NULL DEFAULT 0,
+            duplicates_removed INTEGER NOT NULL DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS reviewers (
@@ -134,5 +135,12 @@ def init_db(app):
     )
 
     conn.commit()
+
+    try:
+        conn.execute("ALTER TABLE review ADD COLUMN duplicates_removed INTEGER NOT NULL DEFAULT 0;")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
     conn.close()
     return path
