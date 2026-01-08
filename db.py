@@ -132,6 +132,23 @@ def init_db(app):
         CREATE INDEX IF NOT EXISTS idx_second_screening_study ON second_screening(id_review, id_study);
         '''
     )
+    conn.execute(
+        """
+        DELETE FROM studies
+        WHERE document_type IS NULL
+          AND doi IS NULL
+          AND title IS NULL
+          AND authors IS NULL
+          AND year IS NULL
+          AND abstract IS NULL
+          AND source_title IS NULL
+          AND first_screening_included IS NULL
+          AND first_screening_notes IS NULL
+          AND second_screening_included IS NULL
+          AND second_screening_notes IS NULL
+          AND exclusion_reason IS NULL;
+        """
+    )
     conn.commit()
     conn.close()
     return path
