@@ -299,13 +299,13 @@ def create_app() -> Flask:
             )
         db.commit()
 
-    def import_wos_xls(review_id: int, path: str) -> int:
+    def import_wos_xls(review_id: int, path: str) -> Tuple[int, int]:
         db = get_db()
         wb = CalamineWorkbook.from_path(path)
         sheet = wb.get_sheet_by_index(0)
         rows = sheet.to_python()
         if not rows:
-            return 0
+            return 0, 0
 
         headers = [str(h).strip() for h in rows[0]]
         idx = {h: i for i, h in enumerate(headers)}
@@ -321,6 +321,7 @@ def create_app() -> Flask:
             return s if s else None
 
         inserted = 0
+        duplicates = 0
         for row in rows[1:]:
             doc_type = get(row, "Document Type")
             doi = normalize_doi(get(row, "DOI"))
@@ -348,15 +349,18 @@ def create_app() -> Flask:
                 )
                 if cur.rowcount == 1:
                     inserted += 1
+                else:
+                    duplicates += 1
             except Exception:
                 continue
 
         db.commit()
-        return inserted
+        return inserted, duplicates
 
-    def import_scopus_csv(review_id: int, path: str) -> int:
+    def import_scopus_csv(review_id: int, path: str) -> Tuple[int, int]:
         db = get_db()
         inserted = 0
+        duplicates = 0
         with open(path, "r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
             for r in reader:
@@ -386,11 +390,13 @@ def create_app() -> Flask:
                     )
                     if cur.rowcount == 1:
                         inserted += 1
+                    else:
+                        duplicates += 1
                 except Exception:
                     continue
 
         db.commit()
-        return inserted
+        return inserted, duplicates
 
     def delete_empty_studies(review_id: int) -> int:
         db = get_db()
@@ -573,7 +579,8 @@ def create_app() -> Flask:
                 wos = request.files.get("wos_file")
                 scopus = request.files.get("scopus_file")
                 inserted = 0
-                deleted = 0
+                duplicates = 0
+                empty_removed = 0
                 errors = []
 
                 if wos and wos.filename:
@@ -582,7 +589,9 @@ def create_app() -> Flask:
                     else:
                         path = save_upload(wos)
                         try:
-                            inserted += import_wos_xls(review_id, path)
+                            wos_inserted, wos_duplicates = import_wos_xls(review_id, path)
+                            inserted += wos_inserted
+                            duplicates += wos_duplicates
                         except Exception as e:
                             errors.append(f"WoS import failed: {e}")
 
@@ -592,19 +601,30 @@ def create_app() -> Flask:
                     else:
                         path = save_upload(scopus)
                         try:
-                            inserted += import_scopus_csv(review_id, path)
+                            scopus_inserted, scopus_duplicates = import_scopus_csv(review_id, path)
+                            inserted += scopus_inserted
+                            duplicates += scopus_duplicates
                         except Exception as e:
                             errors.append(f"Scopus import failed: {e}")
 
-                deleted = delete_empty_studies(review_id)
+                empty_removed = delete_empty_studies(review_id)
+                if duplicates:
+                    db.execute(
+                        """
+                        UPDATE review
+                        SET duplicates_removed = COALESCE(duplicates_removed, 0) + ?
+                        WHERE id = ?;
+                        """,
+                        (duplicates, review_id),
+                    )
+                    db.commit()
                 refresh_cached_metrics(review_id)
                 for e in errors:
                     flash(e, "error")
-                flash(
-                    f"Imported {inserted} studies in total. "
-                    f"{deleted} duplicated studies were detected and removed.",
-                    "success",
-                )
+                message = f"Imported {inserted} studies in total. Duplicates removed: {duplicates}."
+                if empty_removed:
+                    message = f"{message} Empty rows removed: {empty_removed}."
+                flash(message, "success")
                 return redirect(url_for("review_main", review_id=review_id))
 
         refresh_cached_metrics(review_id)

@@ -35,6 +35,7 @@ def init_db(app):
             review_name TEXT NOT NULL,
             participants_number INTEGER NOT NULL DEFAULT 0,
             participants_name TEXT NOT NULL DEFAULT '',
+            duplicates_removed INTEGER NOT NULL DEFAULT 0,
             first_screening_progress INTEGER NOT NULL DEFAULT 0,
             second_screening_progress INTEGER NOT NULL DEFAULT 0
         );
@@ -132,6 +133,12 @@ def init_db(app):
         CREATE INDEX IF NOT EXISTS idx_second_screening_study ON second_screening(id_review, id_study);
         '''
     )
+
+    review_columns = {row["name"] for row in conn.execute("PRAGMA table_info(review);").fetchall()}
+    if "duplicates_removed" not in review_columns:
+        conn.execute(
+            "ALTER TABLE review ADD COLUMN duplicates_removed INTEGER NOT NULL DEFAULT 0;"
+        )
 
     conn.commit()
     conn.close()
