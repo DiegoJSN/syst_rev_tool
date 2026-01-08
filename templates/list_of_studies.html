@@ -13,6 +13,7 @@
 
 <div class="card shadow-sm">
   <div class="card-body">
+    <p class="text-muted mb-3">The studies highlighted in green have progressed to the extraction phase.</p>
     <div class="table-responsive">
       <table id="studiesTable" class="table table-striped table-hover align-middle">
         <thead>
@@ -24,16 +25,16 @@
             <th>Year</th>
             <th>Abstract</th>
             <th>Source</th>
-            <th>1st</th>
+            <th>1st screening</th>
             <th>1st notes</th>
-            <th>2nd</th>
+            <th>2nd screening</th>
             <th>2nd notes</th>
             <th>Exclusion reason</th>
           </tr>
         </thead>
         <tbody>
           {% for r in rows %}
-            <tr class="{% if r.second_screening_included == 'yes' %}row-yes{% elif r.second_screening_included == 'no' %}row-no{% endif %}">
+            <tr class="{% if r.second_screening_included == 'yes' %}row-yes{% else %}row-no{% endif %}">
               <td>{{ r.id }}</td>
               <td>
                 {% if r.doi %}
