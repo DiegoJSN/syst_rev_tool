@@ -80,7 +80,13 @@
               <td class="small">{{ r.first_screening_notes }}</td>
               <td>{{ r.second_screening_included }}</td>
               <td class="small">{{ r.second_screening_notes }}</td>
-              <td class="small">{{ r.exclusion_reason_text }}</td>
+              <td class="small">
+                {% if r.exclusion_reason_hierarchy %}
+                  {{ r.exclusion_reason_hierarchy }} {{ r.exclusion_reason_text }}
+                {% else %}
+                  {{ r.exclusion_reason_text }}
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
