@@ -74,6 +74,7 @@ def init_db(app):
             year INTEGER,
             abstract TEXT,
             source_title TEXT,
+            file_name TEXT,
             first_screening_included TEXT CHECK (first_screening_included IN ('yes','no','conflict') OR first_screening_included IS NULL),
             first_screening_notes TEXT,
             second_screening_included TEXT CHECK (second_screening_included IN ('yes','no','conflict') OR second_screening_included IS NULL),
@@ -83,6 +84,10 @@ def init_db(app):
             UNIQUE(id_review, title, authors, year),
             FOREIGN KEY (id_review) REFERENCES review(id) ON DELETE CASCADE
         );
+        """,
+        """
+        ALTER TABLE studies
+        ADD COLUMN IF NOT EXISTS file_name TEXT;
         """,
         """
         CREATE TABLE IF NOT EXISTS first_screening (

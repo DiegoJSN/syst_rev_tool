@@ -54,6 +54,19 @@
                 <a href="{{ doi_url(study.doi) }}" target="_blank" rel="noopener">DOI: {{ study.doi }}</a>
               </div>
             {% endif %}
+            <div class="mt-2">
+              {% if study.file_name %}
+                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('read_full_text', review_id=review.id, study_id=study.id) }}" target="_blank" rel="noopener">Read full text</a>
+              {% else %}
+                <form method="post" action="{{ url_for('upload_full_text', review_id=review.id, study_id=study.id) }}" enctype="multipart/form-data" class="d-inline">
+                  <input type="hidden" name="page" value="{{ page }}">
+                  <input type="hidden" name="per_page" value="{{ per_page }}">
+                  <input type="hidden" name="sort" value="{{ sort }}">
+                  <input type="file" class="d-none" name="full_text" id="full_text_{{ study.id }}" accept="application/pdf" onchange="this.form.submit()">
+                  <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('full_text_{{ study.id }}').click()">Upload full text</button>
+                </form>
+              {% endif %}
+            </div>
 
             <hr>
             <div class="mb-3">
