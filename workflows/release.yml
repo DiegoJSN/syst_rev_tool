@@ -1,0 +1,103 @@
+name: build-and-release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            data_sep: ";"
+            zip_name: app-windows.zip
+            exe_in: dist/run.exe
+            exe_out: app.exe
+          - os: macos-latest
+            data_sep: ":"
+            zip_name: app-macos.zip
+            exe_in: dist/run
+            exe_out: app
+          - os: ubuntu-latest
+            data_sep: ":"
+            zip_name: app-linux.zip
+            exe_in: dist/run
+            exe_out: app
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Build executable (PyInstaller)
+        shell: bash
+        run: |
+          pyinstaller --onefile --noconsole \
+            --add-data "templates${{ matrix.data_sep }}templates" \
+            --add-data "static${{ matrix.data_sep }}static" \
+            --collect-all python_calamine \
+            run.py
+
+      - name: Package zip
+        shell: bash
+        run: |
+          mkdir -p release
+          cp "${{ matrix.exe_in }}" "release/${{ matrix.exe_out }}"
+          if [[ "${{ runner.os }}" != "Windows" ]]; then
+            chmod +x "release/${{ matrix.exe_out }}"
+          fi
+
+          python - <<'PY'
+          import os, zipfile, pathlib
+          zip_name = os.environ["ZIP_NAME"]
+          base = pathlib.Path("release")
+          with zipfile.ZipFile(zip_name, "w", compression=zipfile.ZIP_DEFLATED) as z:
+              for p in base.rglob("*"):
+                  if p.is_file():
+                      z.write(p, p.relative_to(base))
+          print("Created", zip_name)
+          PY
+        env:
+          ZIP_NAME: ${{ matrix.zip_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.zip_name }}
+          path: ${{ matrix.zip_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist_zips
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist_zips/**/*.zip
