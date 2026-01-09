@@ -202,6 +202,9 @@ def create_app() -> Flask:
         path = os.path.join(upload_dir, fname)
         file_storage.save(path)
         return path
+
+    def review_studies_dir(review_id: int) -> str:
+        return os.path.join(app.root_path, "reviews", str(review_id), "studies")
     def pick_two_distinct_decisions_first(review_id: int, study_id: int):
         db = get_db()
         rows = db.execute(
@@ -1002,6 +1005,83 @@ def create_app() -> Flask:
         ).fetchall()
 
         return render_template("exclusion_reasons.html", review=review, reasons=reasons)
+
+    @app.route("/review/<int:review_id>/studies/<int:study_id>/full_text", methods=["GET"])
+    def read_full_text(review_id: int, study_id: int):
+        db = get_db()
+        review = db.execute("SELECT id FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        try:
+            require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        row = db.execute(
+            "SELECT file_name FROM studies WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        ).fetchone()
+        if not row or not row["file_name"]:
+            abort(404)
+
+        path = os.path.join(review_studies_dir(review_id), row["file_name"])
+        if not os.path.exists(path):
+            abort(404)
+
+        return send_file(path, as_attachment=False, download_name=row["file_name"])
+
+    @app.route("/review/<int:review_id>/studies/<int:study_id>/full_text/upload", methods=["POST"])
+    def upload_full_text(review_id: int, study_id: int):
+        db = get_db()
+        review = db.execute("SELECT id FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        try:
+            require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        study = db.execute(
+            "SELECT id FROM studies WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        ).fetchone()
+        if not study:
+            abort(404)
+
+        per_page = parse_positive_int(request.form.get("per_page"), 25)
+        if per_page not in {25, 50, 100}:
+            per_page = 25
+        page = parse_positive_int(request.form.get("page"), 1)
+        sort = request.form.get("sort", "random")
+        if sort not in {"random", "id", "authors", "title"}:
+            sort = "random"
+
+        upload = request.files.get("full_text")
+        if not upload or not upload.filename:
+            flash("Please select a PDF to upload.", "error")
+            return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
+
+        if not upload.filename.lower().endswith(".pdf"):
+            flash("Only PDF files are allowed.", "error")
+            return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
+
+        file_name = f"{review_id}_{study_id}.pdf"
+        target_dir = review_studies_dir(review_id)
+        os.makedirs(target_dir, exist_ok=True)
+        upload.save(os.path.join(target_dir, file_name))
+
+        db.execute(
+            "UPDATE studies SET file_name = %s WHERE id_review = %s AND id = %s;",
+            (file_name, review_id, study_id),
+        )
+        db.commit()
+
+        flash("Full text uploaded.", "success")
+        return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
 
     @app.route("/<int:review_id>_second_screening.html", methods=["GET", "POST"])
     def second_screening(review_id: int):
