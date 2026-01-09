@@ -1,5 +1,6 @@
 import os
 import csv
+import math
 import random
 from typing import Optional, Tuple, List
 
@@ -66,6 +67,39 @@ def create_app() -> Flask:
         if not base_existing.endswith(suffix):
             base_existing = base_existing.rstrip() + suffix
         return f"{base_existing}{new_piece}{suffix}"
+
+    def parse_positive_int(value: Optional[str], default: int) -> int:
+        if value and value.isdigit():
+            parsed = int(value)
+            if parsed > 0:
+                return parsed
+        return default
+
+    def parse_pagination_args() -> Tuple[int, int, str]:
+        allowed_per_page = {25, 50, 100}
+        per_page = parse_positive_int(request.args.get("per_page"), 25)
+        if per_page not in allowed_per_page:
+            per_page = 25
+        page = parse_positive_int(request.args.get("page"), 1)
+        sort = request.args.get("sort", "random")
+        if sort not in {"random", "id", "authors", "title"}:
+            sort = "random"
+        return per_page, page, sort
+
+    def sort_clause(sort: str) -> str:
+        if sort == "id":
+            return "id ASC"
+        if sort == "authors":
+            return "CASE WHEN authors IS NULL OR authors = '' THEN 1 ELSE 0 END, lower(authors) ASC, id ASC"
+        if sort == "title":
+            return "CASE WHEN title IS NULL OR title = '' THEN 1 ELSE 0 END, lower(title) ASC, id ASC"
+        return "RANDOM()"
+
+    def clamp_page(page: int, total: int, per_page: int) -> Tuple[int, int]:
+        total_pages = max(1, math.ceil(total / per_page)) if total else 1
+        if page > total_pages:
+            page = total_pages
+        return page, total_pages
 
     def refresh_cached_metrics(review_id: int):
         db = get_db()
@@ -718,6 +752,8 @@ def create_app() -> Flask:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
 
+        per_page, page, sort = parse_pagination_args()
+
         if request.method == "POST":
             study_id = int(request.form.get("study_id"))
             decision_btn = request.form.get("decision")
@@ -754,9 +790,24 @@ def create_app() -> Flask:
 
             consolidate_first(review_id, study_id)
             refresh_cached_metrics(review_id)
-            return redirect(url_for("first_screening", review_id=review_id))
+            return redirect(url_for("first_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
 
-        study = db.execute(
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
+              AND first_screening_included IS NULL
+              AND id NOT IN (
+                SELECT id_study FROM first_screening
+                WHERE id_review = %s AND id_reviewer = %s
+              );
+            """,
+            (review_id, review_id, reviewer_id),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
             """
             SELECT * FROM studies
             WHERE id_review = %s
@@ -765,17 +816,24 @@ def create_app() -> Flask:
                 SELECT id_study FROM first_screening
                 WHERE id_review = %s AND id_reviewer = %s
               )
-            ORDER BY RANDOM()
-            LIMIT 1;
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
             """,
-            (review_id, review_id, reviewer_id),
-        ).fetchone()
+            (review_id, review_id, reviewer_id, per_page, offset),
+        ).fetchall()
 
         return render_template(
             "first_screening.html",
             review=review,
-            study=study,
+            studies=studies,
             reviewer_name=reviewer_name,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_first_screening_conflicts.html", methods=["GET", "POST"])
@@ -790,6 +848,8 @@ def create_app() -> Flask:
         except PermissionError as e:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
+
+        per_page, page, sort = parse_pagination_args()
 
         if request.method == "POST":
             study_id = int(request.form.get("study_id"))
@@ -817,11 +877,28 @@ def create_app() -> Flask:
             db.commit()
 
             refresh_cached_metrics(review_id)
-            return redirect(url_for("first_screening_conflicts", review_id=review_id))
+            return redirect(
+                url_for(
+                    "first_screening_conflicts",
+                    review_id=review_id,
+                    page=page,
+                    per_page=per_page,
+                    sort=sort,
+                )
+            )
+
+        total = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND first_screening_included = 'conflict';",
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
 
         studies = db.execute(
-            "SELECT * FROM studies WHERE id_review = %s AND first_screening_included = 'conflict' ORDER BY id ASC;",
-            (review_id,),
+            "SELECT * FROM studies WHERE id_review = %s AND first_screening_included = 'conflict' ORDER BY "
+            + sort_clause(sort)
+            + " LIMIT %s OFFSET %s;",
+            (review_id, per_page, offset),
         ).fetchall()
 
         conflicts_map = {}
@@ -844,6 +921,11 @@ def create_app() -> Flask:
             studies=studies,
             conflicts_map=conflicts_map,
             reviewer_name=reviewer_name,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_first_screening_contributions.html")
@@ -934,6 +1016,8 @@ def create_app() -> Flask:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
 
+        per_page, page, sort = parse_pagination_args()
+
         reasons = db.execute(
             """
             SELECT id, hierarchy, reason FROM exclusion_reasons
@@ -989,9 +1073,25 @@ def create_app() -> Flask:
 
             consolidate_second(review_id, study_id)
             refresh_cached_metrics(review_id)
-            return redirect(url_for("second_screening", review_id=review_id))
+            return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
 
-        study = db.execute(
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
+              AND first_screening_included = 'yes'
+              AND second_screening_included IS NULL
+              AND id NOT IN (
+                SELECT id_study FROM second_screening
+                WHERE id_review = %s AND id_reviewer = %s
+              );
+            """,
+            (review_id, review_id, reviewer_id),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
             """
             SELECT * FROM studies
             WHERE id_review = %s
@@ -1001,18 +1101,25 @@ def create_app() -> Flask:
                 SELECT id_study FROM second_screening
                 WHERE id_review = %s AND id_reviewer = %s
               )
-            ORDER BY RANDOM()
-            LIMIT 1;
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
             """,
-            (review_id, review_id, reviewer_id),
-        ).fetchone()
+            (review_id, review_id, reviewer_id, per_page, offset),
+        ).fetchall()
 
         return render_template(
             "second_screening.html",
             review=review,
-            study=study,
+            studies=studies,
             reviewer_name=reviewer_name,
             reasons=reasons,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_second_screening_conflicts.html", methods=["GET", "POST"])
@@ -1027,6 +1134,8 @@ def create_app() -> Flask:
         except PermissionError as e:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
+
+        per_page, page, sort = parse_pagination_args()
 
         reasons = db.execute(
             """
@@ -1073,11 +1182,28 @@ def create_app() -> Flask:
             db.commit()
 
             refresh_cached_metrics(review_id)
-            return redirect(url_for("second_screening_conflicts", review_id=review_id))
+            return redirect(
+                url_for(
+                    "second_screening_conflicts",
+                    review_id=review_id,
+                    page=page,
+                    per_page=per_page,
+                    sort=sort,
+                )
+            )
+
+        total = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND second_screening_included = 'conflict';",
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
 
         studies = db.execute(
-            "SELECT * FROM studies WHERE id_review = %s AND second_screening_included = 'conflict' ORDER BY id ASC;",
-            (review_id,),
+            "SELECT * FROM studies WHERE id_review = %s AND second_screening_included = 'conflict' ORDER BY "
+            + sort_clause(sort)
+            + " LIMIT %s OFFSET %s;",
+            (review_id, per_page, offset),
         ).fetchall()
 
         conflicts_map = {}
@@ -1102,6 +1228,11 @@ def create_app() -> Flask:
             conflicts_map=conflicts_map,
             reviewer_name=reviewer_name,
             reasons=reasons,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_second_screening_contributions.html")

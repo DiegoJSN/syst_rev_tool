@@ -8,6 +8,33 @@
   <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
 </div>
 
+<form method="get" class="row g-2 align-items-end mb-3">
+  <input type="hidden" name="page" value="1">
+  <div class="col-auto">
+    <label class="form-label small">Studies per page</label>
+    <select class="form-select form-select-sm" name="per_page">
+      <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+      <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+      <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <label class="form-label small">Order by</label>
+    <select class="form-select form-select-sm" name="sort">
+      <option value="random" {% if sort == "random" %}selected{% endif %}>Random</option>
+      <option value="id" {% if sort == "id" %}selected{% endif %}>Study ID</option>
+      <option value="authors" {% if sort == "authors" %}selected{% endif %}>Authors</option>
+      <option value="title" {% if sort == "title" %}selected{% endif %}>Title</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-outline-primary btn-sm" type="submit">Apply</button>
+  </div>
+  <div class="col-auto ms-auto">
+    <div class="text-muted small">Showing {{ studies|length }} of {{ total }} conflicts</div>
+  </div>
+</form>
+
 {% if not studies %}
   <div class="alert alert-success">No conflicts to resolve.</div>
 {% else %}
@@ -98,5 +125,27 @@
       </div>
     {% endfor %}
   </div>
+
+  <nav aria-label="Second screening conflicts pages" class="mt-3">
+    <ul class="pagination">
+      <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+        {% if page <= 1 %}
+          <span class="page-link">Previous</span>
+        {% else %}
+          <a class="page-link" href="{{ url_for('second_screening_conflicts', review_id=review.id, page=page-1, per_page=per_page, sort=sort) }}">Previous</a>
+        {% endif %}
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">Page {{ page }} of {{ total_pages }}</span>
+      </li>
+      <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+        {% if page >= total_pages %}
+          <span class="page-link">Next</span>
+        {% else %}
+          <a class="page-link" href="{{ url_for('second_screening_conflicts', review_id=review.id, page=page+1, per_page=per_page, sort=sort) }}">Next</a>
+        {% endif %}
+      </li>
+    </ul>
+  </nav>
 {% endif %}
 {% endblock %}
