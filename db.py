@@ -1,11 +1,37 @@
 import os
+import sys
 import sqlite3
+from pathlib import Path
 from flask import g
 
+APP_NAME = "syst_rev_tool"
 DB_FILENAME = "review.db"
 
-def db_path(app) -> str:
-    return os.path.join(app.instance_path, DB_FILENAME)
+
+def data_dir() -> Path:
+    """
+    Carpeta escribible por usuario para guardar DB y archivos persistentes.
+    - Windows: %APPDATA%/syst_rev_tool
+    - macOS: ~/Library/Application Support/syst_rev_tool
+    - Linux:  ~/.local/share/syst_rev_tool  (o $XDG_DATA_HOME)
+    """
+    if sys.platform.startswith("win"):
+        base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+
+    p = base / APP_NAME
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def db_path(app=None) -> str:
+    # Mantengo la firma db_path(app) para no tocar tu app.py,
+    # pero ya no dependemos de instance_path.
+    return str(data_dir() / DB_FILENAME)
+
 
 def get_db():
     if "db" not in g:
@@ -15,13 +41,14 @@ def get_db():
         g.db = conn
     return g.db
 
+
 def close_db(e=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
 
+
 def init_db(app):
-    os.makedirs(app.instance_path, exist_ok=True)
     path = db_path(app)
 
     conn = sqlite3.connect(path)

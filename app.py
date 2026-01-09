@@ -9,21 +9,29 @@ from flask import (
     flash, session, send_file, abort
 )
 
+from path_utils import resource_path
+
 from openpyxl import Workbook
 
 # Web of Science .xls reader
 from python_calamine import CalamineWorkbook
 
-from db import init_db, get_db, close_db, db_path
+from db import init_db, get_db, close_db, db_path, data_dir
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        template_folder=resource_path("templates"),
+        static_folder=resource_path("static"),
+    )
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
     os.makedirs(app.instance_path, exist_ok=True)
-    os.makedirs(os.path.join(app.root_path, "uploads"), exist_ok=True)
+    os.makedirs(os.path.join(str(data_dir()), "uploads"), exist_ok=True)
+
+    
 
     # Initialize DB if missing
     init_db(app)
@@ -167,7 +175,7 @@ def create_app() -> Flask:
         return cleaned
 
     def save_upload(file_storage) -> str:
-        upload_dir = os.path.join(app.root_path, "uploads")
+        upload_dir = os.path.join(str(data_dir()), "uploads")
         os.makedirs(upload_dir, exist_ok=True)
         fname = safe_filename(file_storage.filename or "upload")
         path = os.path.join(upload_dir, fname)
