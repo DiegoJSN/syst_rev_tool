@@ -1080,7 +1080,14 @@ def create_app() -> Flask:
         )
         db.commit()
 
-        return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
+        redirect_url = url_for(
+            "second_screening",
+            review_id=review_id,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+        )
+        return redirect(f"{redirect_url}#study-{study_id}")
 
     @app.route("/<int:review_id>_second_screening.html", methods=["GET", "POST"])
     def second_screening(review_id: int):

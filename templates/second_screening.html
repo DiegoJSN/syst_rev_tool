@@ -41,7 +41,7 @@
   <div class="row g-3">
     {% for study in studies %}
       <div class="col-12">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm" id="study-{{ study.id }}">
           <div class="card-body">
             <div class="small text-muted">Study ID {{ study.id }}</div>
             <h5 class="mb-1">{{ study.title or "Untitled" }}</h5>
