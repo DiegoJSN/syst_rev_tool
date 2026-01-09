@@ -1080,7 +1080,6 @@ def create_app() -> Flask:
         )
         db.commit()
 
-        flash("Full text uploaded.", "success")
         return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
 
     @app.route("/<int:review_id>_second_screening.html", methods=["GET", "POST"])
