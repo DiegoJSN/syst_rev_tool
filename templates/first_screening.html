@@ -18,6 +18,9 @@
           <div class="small text-muted">Study ID {{ study.id }}</div>
           <h5 class="mb-1">{{ study.title or "Untitled" }}</h5>
           <div class="small text-muted">{{ study.authors }}</div>
+          {% if study.year %}
+            <div class="small text-muted">{{ study.year }}</div>
+          {% endif %}
           {% if study.doi %}
             <div class="mt-2">
               <a href="{{ doi_url(study.doi) }}" target="_blank" rel="noopener">DOI: {{ study.doi }}</a>
