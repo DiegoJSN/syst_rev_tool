@@ -33,18 +33,16 @@
             <table class="table align-middle">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Review</th>
                   <th>Participants</th>
-                  <th style="min-width:180px;">First screening</th>
-                  <th style="min-width:180px;">Second screening</th>
+                  <th style="min-width:220px;">First screening progress</th>
+                  <th style="min-width:220px;">Second screening progress</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {% for r in reviews %}
                 <tr>
-                  <td>{{ r.id }}</td>
                   <td>
                     <a href="{{ url_for('review_main', review_id=r.id) }}" class="text-decoration-none">
                       {{ r.review_name }}

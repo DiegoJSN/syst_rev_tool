@@ -60,12 +60,17 @@ def create_app() -> Flask:
         if not note:
             return existing or ""
         new_piece = f"{reviewer_name} : {note}"
+        delimiter = ";$]"
+        suffix = f"{delimiter} "
         if not existing:
-            return new_piece
-        parts = [p.strip() for p in existing.split(";") if p.strip()]
+            return f"{new_piece}{suffix}"
+        parts = [p.strip() for p in existing.split(delimiter) if p.strip()]
         if new_piece in parts:
             return existing
-        return existing + "; " + new_piece
+        base_existing = existing
+        if not base_existing.endswith(suffix):
+            base_existing = base_existing.rstrip() + suffix
+        return f"{base_existing}{new_piece}{suffix}"
 
     def refresh_cached_metrics(review_id: int):
         db = get_db()
@@ -277,18 +282,21 @@ def create_app() -> Flask:
         if d1 == d2 == "yes":
             outcome = "yes"
         elif d1 == d2 == "no":
-            outcome = "no"
-            candidates = [r for r in [r1, r2] if r is not None]
-            if candidates:
-                q = ",".join("?" for _ in candidates)
-                rows = db.execute(
-                    f"SELECT id, hierarchy FROM exclusion_reasons WHERE id IN ({q});",
-                    tuple(candidates),
-                ).fetchall()
-                if rows:
-                    exclusion_reason = sorted(rows, key=lambda x: x["hierarchy"])[0]["id"]
-                else:
-                    exclusion_reason = candidates[0]
+            if r1 != r2:
+                outcome = "conflict"
+            else:
+                outcome = "no"
+                candidates = [r for r in [r1, r2] if r is not None]
+                if candidates:
+                    q = ",".join("?" for _ in candidates)
+                    rows = db.execute(
+                        f"SELECT id, hierarchy FROM exclusion_reasons WHERE id IN ({q});",
+                        tuple(candidates),
+                    ).fetchall()
+                    if rows:
+                        exclusion_reason = sorted(rows, key=lambda x: x["hierarchy"])[0]["id"]
+                    else:
+                        exclusion_reason = candidates[0]
         elif set([d1, d2]) == set(["yes", "no"]):
             outcome = "conflict"
 
@@ -299,13 +307,13 @@ def create_app() -> Flask:
             )
         db.commit()
 
-    def import_wos_xls(review_id: int, path: str) -> int:
+    def import_wos_xls(review_id: int, path: str) -> tuple[int, int]:
         db = get_db()
         wb = CalamineWorkbook.from_path(path)
         sheet = wb.get_sheet_by_index(0)
         rows = sheet.to_python()
         if not rows:
-            return 0
+            return 0, 0
 
         headers = [str(h).strip() for h in rows[0]]
         idx = {h: i for i, h in enumerate(headers)}
@@ -321,6 +329,7 @@ def create_app() -> Flask:
             return s if s else None
 
         inserted = 0
+        duplicates = 0
         for row in rows[1:]:
             doc_type = get(row, "Document Type")
             doi = normalize_doi(get(row, "DOI"))
@@ -338,7 +347,7 @@ def create_app() -> Flask:
                     year_int = None
 
             try:
-                cur = db.execute(
+                db.execute(
                     """
                     INSERT OR IGNORE INTO studies
                     (id_review, document_type, doi, title, authors, year, abstract, source_title)
@@ -346,17 +355,21 @@ def create_app() -> Flask:
                     """,
                     (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                 )
-                if cur.rowcount == 1:
+                changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
+                if changes == 1:
                     inserted += 1
+                else:
+                    duplicates += 1
             except Exception:
                 continue
 
         db.commit()
-        return inserted
+        return inserted, duplicates
 
-    def import_scopus_csv(review_id: int, path: str) -> int:
+    def import_scopus_csv(review_id: int, path: str) -> tuple[int, int]:
         db = get_db()
         inserted = 0
+        duplicates = 0
         with open(path, "r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
             for r in reader:
@@ -376,7 +389,7 @@ def create_app() -> Flask:
                         year_int = None
 
                 try:
-                    cur = db.execute(
+                    db.execute(
                         """
                         INSERT OR IGNORE INTO studies
                         (id_review, document_type, doi, title, authors, year, abstract, source_title)
@@ -384,13 +397,40 @@ def create_app() -> Flask:
                         """,
                         (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                     )
-                    if cur.rowcount == 1:
+                    changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
+                    if changes == 1:
                         inserted += 1
+                    else:
+                        duplicates += 1
                 except Exception:
                     continue
 
         db.commit()
-        return inserted
+        return inserted, duplicates
+
+    def delete_empty_studies(review_id: int) -> int:
+        db = get_db()
+        cur = db.execute(
+            """
+            DELETE FROM studies
+            WHERE id_review = ?
+              AND document_type IS NULL
+              AND doi IS NULL
+              AND title IS NULL
+              AND authors IS NULL
+              AND year IS NULL
+              AND abstract IS NULL
+              AND source_title IS NULL
+              AND first_screening_included IS NULL
+              AND first_screening_notes IS NULL
+              AND second_screening_included IS NULL
+              AND second_screening_notes IS NULL
+              AND exclusion_reason IS NULL;
+            """,
+            (review_id,),
+        )
+        db.commit()
+        return cur.rowcount
 
     # ---------- routes ----------
 
@@ -549,6 +589,8 @@ def create_app() -> Flask:
                 wos = request.files.get("wos_file")
                 scopus = request.files.get("scopus_file")
                 inserted = 0
+                duplicates = 0
+                deleted = 0
                 errors = []
 
                 if wos and wos.filename:
@@ -557,7 +599,9 @@ def create_app() -> Flask:
                     else:
                         path = save_upload(wos)
                         try:
-                            inserted += import_wos_xls(review_id, path)
+                            wos_inserted, wos_duplicates = import_wos_xls(review_id, path)
+                            inserted += wos_inserted
+                            duplicates += wos_duplicates
                         except Exception as e:
                             errors.append(f"WoS import failed: {e}")
 
@@ -567,14 +611,28 @@ def create_app() -> Flask:
                     else:
                         path = save_upload(scopus)
                         try:
-                            inserted += import_scopus_csv(review_id, path)
+                            scopus_inserted, scopus_duplicates = import_scopus_csv(review_id, path)
+                            inserted += scopus_inserted
+                            duplicates += scopus_duplicates
                         except Exception as e:
                             errors.append(f"Scopus import failed: {e}")
 
+                deleted = delete_empty_studies(review_id)
+                removed = duplicates + deleted
+                if removed:
+                    db.execute(
+                        "UPDATE review SET duplicates_removed = duplicates_removed + ? WHERE id = ?;",
+                        (removed, review_id),
+                    )
+                    db.commit()
                 refresh_cached_metrics(review_id)
                 for e in errors:
                     flash(e, "error")
-                flash(f"Imported {inserted} studies (duplicates ignored).", "success")
+                flash(
+                    f"Imported {inserted} studies in total. "
+                    f"{removed} duplicate studies were detected and removed.",
+                    "success",
+                )
                 return redirect(url_for("review_main", review_id=review_id))
 
         refresh_cached_metrics(review_id)
@@ -594,6 +652,10 @@ def create_app() -> Flask:
             "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included IN ('yes','no');",
             (review_id,),
         ).fetchone()["c"]
+        first_irrelevant = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included = 'no';",
+            (review_id,),
+        ).fetchone()["c"]
 
         second_pending = db.execute(
             """
@@ -610,6 +672,10 @@ def create_app() -> Flask:
             "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included IN ('yes','no');",
             (review_id,),
         ).fetchone()["c"]
+        second_excluded = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included = 'no';",
+            (review_id,),
+        ).fetchone()["c"]
 
         to_extract = db.execute(
             "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included = 'yes';",
@@ -617,6 +683,8 @@ def create_app() -> Flask:
         ).fetchone()["c"]
 
         logged = session.get("login") if session.get("login", {}).get("review_id") == review_id else None
+        duplicates_removed = review["duplicates_removed"] or 0
+        total_loaded = total + duplicates_removed
 
         return render_template(
             "review_main.html",
@@ -625,12 +693,16 @@ def create_app() -> Flask:
             names1=names1,
             names2=names2,
             total=total,
+            duplicates_removed=duplicates_removed,
+            total_loaded=total_loaded,
             first_pending=first_pending,
             first_conflicts=first_conflicts,
             first_done=first_done,
+            first_irrelevant=first_irrelevant,
             second_pending=second_pending,
             second_conflicts=second_conflicts,
             second_done=second_done,
+            second_excluded=second_excluded,
             to_extract=to_extract,
             logged=logged,
         )
@@ -1063,6 +1135,7 @@ def create_app() -> Flask:
         rows = db.execute(
             """
             SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
                    er.reason AS exclusion_reason_text
             FROM studies s
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
@@ -1084,6 +1157,7 @@ def create_app() -> Flask:
         rows = db.execute(
             """
             SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
                    er.reason AS exclusion_reason_text
             FROM studies s
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
@@ -1118,7 +1192,11 @@ def create_app() -> Flask:
                 r["first_screening_notes"] or "",
                 r["second_screening_included"] or "",
                 r["second_screening_notes"] or "",
-                r["exclusion_reason_text"] or "",
+                " ".join(
+                    str(part)
+                    for part in [r["exclusion_reason_hierarchy"], r["exclusion_reason_text"]]
+                    if part
+                ),
             ])
 
         out_path = os.path.join(app.instance_path, f"review_{review_id}_studies.xlsx")

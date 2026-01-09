@@ -14,7 +14,7 @@
     <div class="container">
       <a class="navbar-brand" href="{{ url_for('home') }}">Review Tool</a>
       {% if review is defined %}
-        <span class="navbar-text text-white-50 ms-2">Review {{ review.id }}: {{ review.review_name }}</span>
+        <span class="navbar-text text-white-50 ms-2">Review : {{ review.review_name }}</span>
       {% endif %}
     </div>
   </nav>

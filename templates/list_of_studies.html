@@ -1,5 +1,14 @@
 {% extends "base.html" %}
+
 {% block content %}
+
+<style>
+  /* Row highlighting based on 2nd screening (yes / none / other) */
+  #studiesTable tbody tr.row-yes > td  { background-color: #d1e7dd !important; } /* light green */
+  #studiesTable tbody tr.row-no > td   { background-color: #f8d7da !important; } /* light red/pink */
+  #studiesTable tbody tr.row-none > td { background-color: #e2e3e5 !important; } /* light gray */
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
   <div>
     <h4 class="mb-0">List of studies</h4>
@@ -13,6 +22,8 @@
 
 <div class="card shadow-sm">
   <div class="card-body">
+    <p class="text-muted mb-3">The studies highlighted in green have progressed to the extraction phase.</p>
+
     <div class="table-responsive">
       <table id="studiesTable" class="table table-striped table-hover align-middle">
         <thead>
@@ -24,32 +35,58 @@
             <th>Year</th>
             <th>Abstract</th>
             <th>Source</th>
-            <th>1st</th>
+            <th>1st screening</th>
             <th>1st notes</th>
-            <th>2nd</th>
+            <th>2nd screening</th>
             <th>2nd notes</th>
             <th>Exclusion reason</th>
           </tr>
         </thead>
+
         <tbody>
           {% for r in rows %}
-            <tr class="{% if r.second_screening_included == 'yes' %}row-yes{% elif r.second_screening_included == 'no' %}row-no{% endif %}">
+            {% set v = r.second_screening_included %}
+            <tr class="
+              {% if v is not none and v|string|trim|lower == 'yes' %}
+                row-yes
+              {% elif v is none or v|string|trim|lower == 'none' %}
+                row-none
+              {% else %}
+                row-no
+              {% endif %}
+            ">
               <td>{{ r.id }}</td>
+
               <td>
                 {% if r.doi %}
                   <a href="{{ doi_url(r.doi) }}" target="_blank" rel="noopener">{{ r.doi }}</a>
                 {% endif %}
               </td>
+
               <td>{{ r.title }}</td>
               <td>{{ r.authors }}</td>
               <td>{{ r.year }}</td>
-              <td class="small text-muted">{{ r.abstract }}</td>
+
+              <td class="small text-muted text-nowrap">
+                {% if r.abstract and r.abstract|length > 20 %}
+                  {{ r.abstract[:20] }}…
+                {% else %}
+                  {{ r.abstract }}
+                {% endif %}
+              </td>
+
               <td class="small text-muted">{{ r.source_title }}</td>
               <td>{{ r.first_screening_included }}</td>
               <td class="small">{{ r.first_screening_notes }}</td>
               <td>{{ r.second_screening_included }}</td>
               <td class="small">{{ r.second_screening_notes }}</td>
-              <td class="small">{{ r.exclusion_reason_text }}</td>
+              <td class="small">
+                {% if r.exclusion_reason_hierarchy %}
+                  {{ r.exclusion_reason_hierarchy }} {{ r.exclusion_reason_text }}
+                {% else %}
+                  {{ r.exclusion_reason_text }}
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -57,6 +94,7 @@
     </div>
   </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
