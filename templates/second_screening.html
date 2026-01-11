@@ -56,7 +56,15 @@
             {% endif %}
             <div class="mt-2">
               {% if study.file_name %}
-                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('read_full_text', review_id=review.id, study_id=study.id) }}" target="_blank" rel="noopener">Read full text</a>
+                <div class="d-inline-flex flex-wrap gap-2 align-items-center">
+                  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('read_full_text', review_id=review.id, study_id=study.id) }}" target="_blank" rel="noopener">Read full text</a>
+                  <form method="post" action="{{ url_for('delete_full_text', review_id=review.id, study_id=study.id) }}" class="d-inline">
+                    <input type="hidden" name="page" value="{{ page }}">
+                    <input type="hidden" name="per_page" value="{{ per_page }}">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Remove the uploaded PDF for this study?')">Delete PDF</button>
+                  </form>
+                </div>
               {% else %}
                 <form method="post" action="{{ url_for('upload_full_text', review_id=review.id, study_id=study.id) }}" enctype="multipart/form-data" class="d-inline">
                   <input type="hidden" name="page" value="{{ page }}">

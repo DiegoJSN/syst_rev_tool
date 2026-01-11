@@ -1096,6 +1096,55 @@ def create_app() -> Flask:
         )
         return redirect(f"{redirect_url}#study-{study_id}")
 
+    @app.route("/review/<int:review_id>/studies/<int:study_id>/full_text/delete", methods=["POST"])
+    def delete_full_text(review_id: int, study_id: int):
+        db = get_db()
+        review = db.execute("SELECT id FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        try:
+            require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        study = db.execute(
+            "SELECT file_name, file_data FROM studies WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        ).fetchone()
+        if not study:
+            abort(404)
+
+        per_page = parse_positive_int(request.form.get("per_page"), 25)
+        if per_page not in {25, 50, 100}:
+            per_page = 25
+        page = parse_positive_int(request.form.get("page"), 1)
+        sort = request.form.get("sort", "random")
+        if sort not in {"random", "id", "authors", "title"}:
+            sort = "random"
+
+        if study.get("file_name") and not study.get("file_data"):
+            path = os.path.join(review_studies_dir(review_id), study["file_name"])
+            if os.path.exists(path):
+                os.remove(path)
+
+        db.execute(
+            "UPDATE studies SET file_name = NULL, file_data = NULL WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        )
+        db.commit()
+        flash("Full-text PDF removed.", "success")
+
+        redirect_url = url_for(
+            "second_screening",
+            review_id=review_id,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+        )
+        return redirect(f"{redirect_url}#study-{study_id}")
+
     @app.route("/<int:review_id>_second_screening.html", methods=["GET", "POST"])
     def second_screening(review_id: int):
         db = get_db()
