@@ -513,7 +513,7 @@ def create_app() -> Flask:
                 return redirect(url_for("home"))
 
         reviews = db.execute("SELECT * FROM review ORDER BY id DESC;").fetchall()
-        delete_password = (os.environ.get("DELETE_PASWORD") or "").strip()
+        delete_password = (os.environ.get("DELETE_PASSWORD") or "").strip()
         return render_template("0_home.html", reviews=reviews, delete_password=delete_password)
 
     @app.route("/review/<int:review_id>/delete", methods=["POST"])
