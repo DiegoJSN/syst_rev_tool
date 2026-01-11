@@ -2,6 +2,7 @@ import os
 import csv
 import math
 import random
+from io import BytesIO
 from typing import Optional, Tuple, List
 
 from flask import (
@@ -1020,11 +1021,19 @@ def create_app() -> Flask:
             return redirect(url_for("review_main", review_id=review_id))
 
         row = db.execute(
-            "SELECT file_name FROM studies WHERE id_review = %s AND id = %s;",
+            "SELECT file_name, file_data FROM studies WHERE id_review = %s AND id = %s;",
             (review_id, study_id),
         ).fetchone()
         if not row or not row["file_name"]:
             abort(404)
+
+        if row.get("file_data"):
+            return send_file(
+                BytesIO(row["file_data"]),
+                mimetype="application/pdf",
+                as_attachment=False,
+                download_name=row["file_name"],
+            )
 
         path = os.path.join(review_studies_dir(review_id), row["file_name"])
         if not os.path.exists(path):
@@ -1069,14 +1078,12 @@ def create_app() -> Flask:
             flash("Only PDF files are allowed.", "error")
             return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
 
-        file_name = f"{review_id}_{study_id}.pdf"
-        target_dir = review_studies_dir(review_id)
-        os.makedirs(target_dir, exist_ok=True)
-        upload.save(os.path.join(target_dir, file_name))
+        file_name = safe_filename(upload.filename or f"{review_id}_{study_id}.pdf")
+        upload_bytes = upload.read()
 
         db.execute(
-            "UPDATE studies SET file_name = %s WHERE id_review = %s AND id = %s;",
-            (file_name, review_id, study_id),
+            "UPDATE studies SET file_name = %s, file_data = %s WHERE id_review = %s AND id = %s;",
+            (file_name, upload_bytes, review_id, study_id),
         )
         db.commit()
 
