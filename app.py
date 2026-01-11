@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()  # carga .env automáticamente desde la carpeta actual. Asi te evitas escribir en la terminal lo de "DATABASE_URL=f"postgresql://review_user:[PASSWORD]@[IP]:5432/systrev_db"
+
 import os
 import csv
 import math
