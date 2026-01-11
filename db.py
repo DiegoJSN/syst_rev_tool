@@ -75,6 +75,7 @@ def init_db(app):
             abstract TEXT,
             source_title TEXT,
             file_name TEXT,
+            file_data BYTEA,
             first_screening_included TEXT CHECK (first_screening_included IN ('yes','no','conflict') OR first_screening_included IS NULL),
             first_screening_notes TEXT,
             second_screening_included TEXT CHECK (second_screening_included IN ('yes','no','conflict') OR second_screening_included IS NULL),
@@ -88,6 +89,10 @@ def init_db(app):
         """
         ALTER TABLE studies
         ADD COLUMN IF NOT EXISTS file_name TEXT;
+        """,
+        """
+        ALTER TABLE studies
+        ADD COLUMN IF NOT EXISTS file_data BYTEA;
         """,
         """
         CREATE TABLE IF NOT EXISTS first_screening (
