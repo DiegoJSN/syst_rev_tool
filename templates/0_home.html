@@ -67,7 +67,7 @@
                     </div>
                   </td>
                   <td class="text-end">
-                    <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" onsubmit="return confirm('Delete this review and all its data?');">
+                    <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" onsubmit="return requestDeletePassword(event, this);">
                       <button class="btn btn-sm btn-outline-danger">Delete</button>
                     </form>
                   </td>
@@ -81,4 +81,52 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="deletePasswordModal" tabindex="-1" aria-labelledby="deletePasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deletePasswordModalLabel">Confirm deletion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label" for="deletePasswordInput">Password</label>
+        <input type="password" class="form-control" id="deletePasswordInput" placeholder="password" autocomplete="off">
+        <div class="form-text">Enter the delete password to continue.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="confirmDeletePassword()">Delete review</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const deletePassword = {{ delete_password | tojson }};
+  let deleteFormToSubmit = null;
+
+  function requestDeletePassword(event, form) {
+    event.preventDefault();
+    deleteFormToSubmit = form;
+    const input = document.getElementById("deletePasswordInput");
+    input.value = "";
+    const modal = new bootstrap.Modal(document.getElementById("deletePasswordModal"));
+    modal.show();
+    return false;
+  }
+
+  function confirmDeletePassword() {
+    if (!deletePassword) {
+      alert("Delete password is not configured.");
+      return;
+    }
+    const input = document.getElementById("deletePasswordInput");
+    if (input.value !== deletePassword) {
+      alert("Incorrect password.");
+      return;
+    }
+    if (deleteFormToSubmit) {
+      deleteFormToSubmit.submit();
+    }
+  }
+</script>
 {% endblock %}
