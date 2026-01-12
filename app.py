@@ -1073,15 +1073,18 @@ def create_app() -> Flask:
         sort = request.form.get("sort", "random")
         if sort not in {"random", "id", "authors", "title"}:
             sort = "random"
+        return_to = request.form.get("return_to", "second_screening")
+        if return_to not in {"second_screening", "full_extraction"}:
+            return_to = "second_screening"
 
         upload = request.files.get("full_text")
         if not upload or not upload.filename:
             flash("Please select a PDF to upload.", "error")
-            return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
+            return redirect(url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort))
 
         if not upload.filename.lower().endswith(".pdf"):
             flash("Only PDF files are allowed.", "error")
-            return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
+            return redirect(url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort))
 
         file_name = safe_filename(upload.filename or f"{review_id}_{study_id}.pdf")
         upload_bytes = upload.read()
@@ -1093,7 +1096,7 @@ def create_app() -> Flask:
         db.commit()
 
         redirect_url = url_for(
-            "second_screening",
+            return_to,
             review_id=review_id,
             page=page,
             per_page=per_page,
@@ -1128,6 +1131,9 @@ def create_app() -> Flask:
         sort = request.form.get("sort", "random")
         if sort not in {"random", "id", "authors", "title"}:
             sort = "random"
+        return_to = request.form.get("return_to", "second_screening")
+        if return_to not in {"second_screening", "full_extraction"}:
+            return_to = "second_screening"
 
         if study.get("file_name") and not study.get("file_data"):
             path = os.path.join(review_studies_dir(review_id), study["file_name"])
@@ -1142,7 +1148,7 @@ def create_app() -> Flask:
         flash("Full-text PDF removed.", "success")
 
         redirect_url = url_for(
-            "second_screening",
+            return_to,
             review_id=review_id,
             page=page,
             per_page=per_page,
