@@ -6,10 +6,10 @@
     <div class="text-muted small">Reviewer: {{ reviewer_name }}</div>
   </div>
   <div class="d-flex flex-wrap gap-2">
-    <a class="btn btn-outline-success" href="{{ url_for('export_second_screening_xlsx', review_id=review.id) }}">
+    <a class="btn btn-success" href="{{ url_for('export_second_screening_xlsx', review_id=review.id) }}">
       Export to .xlsx
     </a>
-    <a class="btn btn-outline-secondary" href="{{ url_for('export_second_screening_pdfs', review_id=review.id) }}">
+    <a class="btn btn-danger" href="{{ url_for('export_second_screening_pdfs', review_id=review.id) }}">
       Export PDFs
     </a>
     <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
