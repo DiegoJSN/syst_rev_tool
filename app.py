@@ -1430,7 +1430,47 @@ def create_app() -> Flask:
         if not review:
             abort(404)
 
-        return render_template("full_extraction.html", review=review)
+        try:
+            _, reviewer_name = require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        per_page, page, sort = parse_pagination_args()
+
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes';
+            """,
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
+            """
+            SELECT * FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
+            """,
+            (review_id, per_page, offset),
+        ).fetchall()
+
+        return render_template(
+            "full_extraction.html",
+            review=review,
+            studies=studies,
+            reviewer_name=reviewer_name,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
+        )
 
     @app.route("/review/<int:review_id>/export_studies.xlsx")
     def export_studies_xlsx(review_id: int):
