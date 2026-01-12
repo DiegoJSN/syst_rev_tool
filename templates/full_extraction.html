@@ -36,6 +36,14 @@
     </select>
   </div>
   <div class="col-auto">
+    <label class="form-label small">Show</label>
+    <select class="form-select form-select-sm" name="show">
+      <option value="with_pdf" {% if show == "with_pdf" %}selected{% endif %}>Studies with PDF</option>
+      <option value="without_pdf" {% if show == "without_pdf" %}selected{% endif %}>Studies without PDF</option>
+      <option value="all" {% if show == "all" %}selected{% endif %}>All</option>
+    </select>
+  </div>
+  <div class="col-auto">
     <button class="btn btn-outline-primary btn-sm" type="submit">Apply</button>
   </div>
   <div class="col-auto ms-auto">
@@ -70,6 +78,7 @@
                     <input type="hidden" name="page" value="{{ page }}">
                     <input type="hidden" name="per_page" value="{{ per_page }}">
                     <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="show" value="{{ show }}">
                     <input type="hidden" name="return_to" value="full_extraction">
                     <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Remove the uploaded PDF for this study?')">Delete PDF</button>
                   </form>
@@ -79,6 +88,7 @@
                   <input type="hidden" name="page" value="{{ page }}">
                   <input type="hidden" name="per_page" value="{{ per_page }}">
                   <input type="hidden" name="sort" value="{{ sort }}">
+                  <input type="hidden" name="show" value="{{ show }}">
                   <input type="hidden" name="return_to" value="full_extraction">
                   <input type="file" class="d-none" name="full_text" id="full_text_{{ study.id }}" accept="application/pdf" onchange="this.form.submit()">
                   <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('full_text_{{ study.id }}').click()">Upload full text</button>
@@ -119,7 +129,7 @@
         {% if page <= 1 %}
           <span class="page-link">Previous</span>
         {% else %}
-          <a class="page-link" href="{{ url_for('full_extraction', review_id=review.id, page=page-1, per_page=per_page, sort=sort) }}">Previous</a>
+          <a class="page-link" href="{{ url_for('full_extraction', review_id=review.id, page=page-1, per_page=per_page, sort=sort, show=show) }}">Previous</a>
         {% endif %}
       </li>
       <li class="page-item disabled">
@@ -129,7 +139,7 @@
         {% if page >= total_pages %}
           <span class="page-link">Next</span>
         {% else %}
-          <a class="page-link" href="{{ url_for('full_extraction', review_id=review.id, page=page+1, per_page=per_page, sort=sort) }}">Next</a>
+          <a class="page-link" href="{{ url_for('full_extraction', review_id=review.id, page=page+1, per_page=per_page, sort=sort, show=show) }}">Next</a>
         {% endif %}
       </li>
     </ul>
