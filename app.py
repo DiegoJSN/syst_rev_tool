@@ -80,6 +80,11 @@ def create_app() -> Flask:
                 return parsed
         return default
 
+    def parse_show_value(value: Optional[str]) -> str:
+        if value in {"all", "with_pdf", "without_pdf"}:
+            return value
+        return "all"
+
     def parse_pagination_args() -> Tuple[int, int, str]:
         allowed_per_page = {25, 50, 100}
         per_page = parse_positive_int(request.args.get("per_page"), 25)
@@ -90,6 +95,9 @@ def create_app() -> Flask:
         if sort not in {"random", "id", "authors", "title"}:
             sort = "random"
         return per_page, page, sort
+
+    def parse_show_arg() -> str:
+        return parse_show_value(request.args.get("show"))
 
     def sort_clause(sort: str) -> str:
         if sort == "id":
@@ -1073,6 +1081,7 @@ def create_app() -> Flask:
         sort = request.form.get("sort", "random")
         if sort not in {"random", "id", "authors", "title"}:
             sort = "random"
+        show = parse_show_value(request.form.get("show"))
         return_to = request.form.get("return_to", "second_screening")
         if return_to not in {"second_screening", "full_extraction"}:
             return_to = "second_screening"
@@ -1080,11 +1089,15 @@ def create_app() -> Flask:
         upload = request.files.get("full_text")
         if not upload or not upload.filename:
             flash("Please select a PDF to upload.", "error")
-            return redirect(url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort))
+            return redirect(
+                url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort, show=show)
+            )
 
         if not upload.filename.lower().endswith(".pdf"):
             flash("Only PDF files are allowed.", "error")
-            return redirect(url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort))
+            return redirect(
+                url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort, show=show)
+            )
 
         file_name = safe_filename(upload.filename or f"{review_id}_{study_id}.pdf")
         upload_bytes = upload.read()
@@ -1101,6 +1114,7 @@ def create_app() -> Flask:
             page=page,
             per_page=per_page,
             sort=sort,
+            show=show,
         )
         return redirect(f"{redirect_url}#study-{study_id}")
 
@@ -1131,6 +1145,7 @@ def create_app() -> Flask:
         sort = request.form.get("sort", "random")
         if sort not in {"random", "id", "authors", "title"}:
             sort = "random"
+        show = parse_show_value(request.form.get("show"))
         return_to = request.form.get("return_to", "second_screening")
         if return_to not in {"second_screening", "full_extraction"}:
             return_to = "second_screening"
@@ -1153,6 +1168,7 @@ def create_app() -> Flask:
             page=page,
             per_page=per_page,
             sort=sort,
+            show=show,
         )
         return redirect(f"{redirect_url}#study-{study_id}")
 
@@ -1170,6 +1186,12 @@ def create_app() -> Flask:
             return redirect(url_for("review_main", review_id=review_id))
 
         per_page, page, sort = parse_pagination_args()
+        show = parse_show_arg()
+        show_clause = ""
+        if show == "with_pdf":
+            show_clause = "AND file_name IS NOT NULL AND file_name <> ''"
+        elif show == "without_pdf":
+            show_clause = "AND (file_name IS NULL OR file_name = '')"
 
         reasons = db.execute(
             """
@@ -1184,6 +1206,7 @@ def create_app() -> Flask:
             study_id = int(request.form.get("study_id"))
             action = request.form.get("action")
             notes = request.form.get("notes") or ""
+            show = parse_show_value(request.form.get("show"))
 
             if action == "include":
                 decision = "yes"
@@ -1193,11 +1216,11 @@ def create_app() -> Flask:
                 reason_id = request.form.get("reason_id")
                 if not reason_id:
                     flash("Please select an exclusion reason.", "error")
-                    return redirect(url_for("second_screening", review_id=review_id))
+                    return redirect(url_for("second_screening", review_id=review_id, show=show))
                 reason_id = int(reason_id)
             else:
                 flash("Invalid action.", "error")
-                return redirect(url_for("second_screening", review_id=review_id))
+                return redirect(url_for("second_screening", review_id=review_id, show=show))
 
             try:
                 db.execute(
@@ -1211,7 +1234,7 @@ def create_app() -> Flask:
             except Exception:
                 db.rollback()
                 flash("You already screened this study in second screening.", "error")
-                return redirect(url_for("second_screening", review_id=review_id))
+                return redirect(url_for("second_screening", review_id=review_id, show=show))
 
             row = db.execute(
                 "SELECT second_screening_notes FROM studies WHERE id_review = %s AND id = %s;",
@@ -1226,7 +1249,9 @@ def create_app() -> Flask:
 
             consolidate_second(review_id, study_id)
             refresh_cached_metrics(review_id)
-            return redirect(url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
+            return redirect(
+                url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort, show=show)
+            )
 
         total = db.execute(
             """
@@ -1237,7 +1262,10 @@ def create_app() -> Flask:
               AND id NOT IN (
                 SELECT id_study FROM second_screening
                 WHERE id_review = %s AND id_reviewer = %s
-              );
+              )
+            """
+            + show_clause
+            + """;
             """,
             (review_id, review_id, reviewer_id),
         ).fetchone()["c"]
@@ -1254,6 +1282,9 @@ def create_app() -> Flask:
                 SELECT id_study FROM second_screening
                 WHERE id_review = %s AND id_reviewer = %s
               )
+            """
+            + show_clause
+            + """
             ORDER BY """
             + sort_clause(sort)
             + """
@@ -1271,6 +1302,7 @@ def create_app() -> Flask:
             page=page,
             per_page=per_page,
             sort=sort,
+            show=show,
             total=total,
             total_pages=total_pages,
         )
@@ -1443,11 +1475,20 @@ def create_app() -> Flask:
             return redirect(url_for("review_main", review_id=review_id))
 
         per_page, page, sort = parse_pagination_args()
+        show = parse_show_arg()
+        show_clause = ""
+        if show == "with_pdf":
+            show_clause = "AND file_name IS NOT NULL AND file_name <> ''"
+        elif show == "without_pdf":
+            show_clause = "AND (file_name IS NULL OR file_name = '')"
 
         total = db.execute(
             """
             SELECT COUNT(*) AS c FROM studies
-            WHERE id_review = %s AND second_screening_included = 'yes';
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            """
+            + show_clause
+            + """;
             """,
             (review_id,),
         ).fetchone()["c"]
@@ -1458,6 +1499,9 @@ def create_app() -> Flask:
             """
             SELECT * FROM studies
             WHERE id_review = %s AND second_screening_included = 'yes'
+            """
+            + show_clause
+            + """
             ORDER BY """
             + sort_clause(sort)
             + """
@@ -1474,6 +1518,7 @@ def create_app() -> Flask:
             page=page,
             per_page=per_page,
             sort=sort,
+            show=show,
             total=total,
             total_pages=total_pages,
         )
