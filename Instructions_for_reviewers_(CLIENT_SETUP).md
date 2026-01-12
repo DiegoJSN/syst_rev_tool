@@ -15,8 +15,12 @@ This guide is for **reviewers** (clients). You only need:
 You must be added to the **same Tailscale network (tailnet)** as the server.
 
 1. Send the server admin the email address you use (or will use) to log into Tailscale.
-2. Wait for the invitation email.
-3. Accept the invitation and confirm you can see the tailnet in your Tailscale account.
+  - If you use an **institutional email** and the admin’s tailnet is tied to a different identity provider (for example, a personal email or another institution), you may get an **Error 403** when trying to join. If that happens, send the admin a **personal email** (Gmail, Outlook, etc.) instead.
+2. Wait for the invitation email from Tailscale.
+3. Accept the invitation and log into Tailscale using that same email account.
+4. Join the tailnet
+  - If you see **Error 403**, it usually means your email domain/identity provider is not allowed in that tailnet. Contact the server admin and ask them to invite your **personal email** instead.
+5. Confirm you can see the server tailnet (and the server device) in your Tailscale app.
 
 Important:
 - If you do not accept the invitation, you will not be able to access the server URL.
