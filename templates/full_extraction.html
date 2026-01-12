@@ -70,11 +70,19 @@
                     <input type="hidden" name="page" value="{{ page }}">
                     <input type="hidden" name="per_page" value="{{ per_page }}">
                     <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="return_to" value="full_extraction">
                     <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Remove the uploaded PDF for this study?')">Delete PDF</button>
                   </form>
                 </div>
               {% else %}
-                <span class="text-muted small">No PDF uploaded.</span>
+                <form method="post" action="{{ url_for('upload_full_text', review_id=review.id, study_id=study.id) }}" enctype="multipart/form-data" class="d-inline">
+                  <input type="hidden" name="page" value="{{ page }}">
+                  <input type="hidden" name="per_page" value="{{ per_page }}">
+                  <input type="hidden" name="sort" value="{{ sort }}">
+                  <input type="hidden" name="return_to" value="full_extraction">
+                  <input type="file" class="d-none" name="full_text" id="full_text_{{ study.id }}" accept="application/pdf" onchange="this.form.submit()">
+                  <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('full_text_{{ study.id }}').click()">Upload full text</button>
+                </form>
               {% endif %}
             </div>
 
