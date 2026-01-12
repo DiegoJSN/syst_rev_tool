@@ -232,6 +232,16 @@
               </div>
             </div>
 
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <a class="btn btn-primary" href="{{ url_for('full_extraction', review_id=review.id) }}">Continue</a>
+              <a class="btn btn-outline-success" href="{{ url_for('export_second_screening_xlsx', review_id=review.id) }}">
+                Export to .xlsx
+              </a>
+              <a class="btn btn-outline-secondary" href="{{ url_for('export_second_screening_pdfs', review_id=review.id) }}">
+                Export PDFs
+              </a>
+            </div>
+
             <div class="form-text mt-2"> </div>
           </div>
         </div>

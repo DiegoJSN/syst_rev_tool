@@ -5,6 +5,7 @@ import os
 import csv
 import math
 import random
+import zipfile
 from io import BytesIO
 from typing import Optional, Tuple, List
 
@@ -1422,6 +1423,15 @@ def create_app() -> Flask:
 
         return render_template("list_of_studies.html", review=review, rows=rows)
 
+    @app.route("/review/<int:review_id>/full_extraction.html")
+    def full_extraction(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        return render_template("full_extraction.html", review=review)
+
     @app.route("/review/<int:review_id>/export_studies.xlsx")
     def export_studies_xlsx(review_id: int):
         db = get_db()
@@ -1477,6 +1487,98 @@ def create_app() -> Flask:
         out_path = os.path.join(app.instance_path, f"review_{review_id}_studies.xlsx")
         wb.save(out_path)
         return send_file(out_path, as_attachment=True, download_name=f"review_{review_id}_studies.xlsx")
+
+    @app.route("/review/<int:review_id>/export_second_screening.xlsx")
+    def export_second_screening_xlsx(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        rows = db.execute(
+            """
+            SELECT id, doi, title, authors, year, abstract, source_title,
+                   first_screening_notes, second_screening_notes
+            FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            ORDER BY id ASC;
+            """,
+            (review_id,),
+        ).fetchall()
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Second screening yes"
+
+        headers = [
+            "Study ID", "DOI", "Title", "Authors", "Year", "Abstract", "Source",
+            "1st notes", "2nd notes",
+        ]
+        ws.append(headers)
+
+        for r in rows:
+            ws.append([
+                r["id"],
+                r["doi"] or "",
+                r["title"] or "",
+                r["authors"] or "",
+                r["year"] or "",
+                r["abstract"] or "",
+                r["source_title"] or "",
+                r["first_screening_notes"] or "",
+                r["second_screening_notes"] or "",
+            ])
+
+        out_path = os.path.join(app.instance_path, f"review_{review_id}_second_screening.xlsx")
+        wb.save(out_path)
+        return send_file(
+            out_path,
+            as_attachment=True,
+            download_name=f"review_{review_id}_second_screening.xlsx",
+        )
+
+    @app.route("/review/<int:review_id>/export_second_screening_pdfs.zip")
+    def export_second_screening_pdfs(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        rows = db.execute(
+            """
+            SELECT id, file_name, file_data
+            FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            ORDER BY id ASC;
+            """,
+            (review_id,),
+        ).fetchall()
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+            for r in rows:
+                study_id = r["id"]
+                filename = f"study_id_{study_id}.pdf"
+                if r.get("file_data"):
+                    zipf.writestr(filename, r["file_data"])
+                    continue
+
+                if not r["file_name"]:
+                    continue
+
+                path = os.path.join(review_studies_dir(review_id), r["file_name"])
+                if not os.path.exists(path):
+                    continue
+                with open(path, "rb") as handle:
+                    zipf.writestr(filename, handle.read())
+
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=f"review_{review_id}_second_screening_pdfs.zip",
+        )
 
     return app
 
