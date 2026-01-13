@@ -14,5 +14,5 @@ if not exist ".env" (
 )
 
 echo.
-echo Setup terminado. Revisa .env y luego ejecuta run.bat
+echo Setup is complete. Check and configure the .env file, then run the run.bat file.
 pause

@@ -163,14 +163,31 @@ You want PostgreSQL reachable only over Tailscale, not from the public internet.
 
 ## 9) Download the GitHub project and install dependencies
 1. Download this project: download ZIP from GitHub and extract it.
-2. Open a terminal and go to the project folder. Then:
+
+2. Install dependencies (choose one option)
+
+### Option A (recommended): Run the automatic setup script (Windows)
+1. In the extracted project folder, double-click ``server_setup.bat``
+2. Wait until the script finishes. If everything goes well, you should see a success message saying:
+    ```bash
+    Setup is complete. Check and configure the .env file, then run the run.bat file.
+    ```
+
+### Option B: Install manually using a terminal (Windows/macOS/Linux)
+
+1. Open a terminal 
+    - Windows: PowerShell
+    - macOS: Terminal
+    - Linux: Terminal
+
+2. Go to the project folder. Then:
     ```bash
     # Windows:
     cd C:\path\to\project
     # macOS/Linux:
     cd /path/to/project
     ```
-3. Create venv:
+3. Create a virtual environment (venv):
     ```bash
     python -m venv venv
     ```
@@ -181,7 +198,7 @@ You want PostgreSQL reachable only over Tailscale, not from the public internet.
     # maxOS/Linux:
     source venv/bin/activate
     ```
-4. Install requirements:
+5. Install requirements:
     ```bash
     pip install -r requirements.txt
     ```
@@ -207,7 +224,21 @@ You want PostgreSQL reachable only over Tailscale, not from the public internet.
 
 ---
 
-## 11) Run the app on the server
+## 11) Run the app on the server and expose the web app to reviewers with Tailscale Serve
+
+Two options:
+
+### Option A (recommended): Run the automatic run server script (Windows)
+1. In the extracted project folder, double-click ``run_server.bat``
+2. Wait until the script finishes. If everything goes well, you should see a message saying 
+    ```bash
+    Serve started and running in the background.
+    ```
+    - **Do not close this terminal window**. If you close it, the server will stop and the app will become unreachable.
+
+
+
+### Option B: using a terminal (Windows/macOS/Linux)
 1. Open the terminal and go to the project folder.
 2. Activate venv
 3. With the venv activated, type:
@@ -219,17 +250,22 @@ You want PostgreSQL reachable only over Tailscale, not from the public internet.
     http://127.0.0.1:5000
     ```
 
----
-
-## 12) Expose the web app to reviewers with Tailscale Serve
-1. Enable Serve for your tailnet (one-time)
+5. Enable Serve for your tailnet (one-time)
     - If Serve is disabled, Tailscale will tell you and give you a URL to enable it in the admin console.
-2. Start Serve
+6. Start Serve
     - Open the terminal, and type:
     ```bash
     tailscale serve --bg 5000
     ```
     This publishes your local app (running on 127.0.0.1:5000) as an HTTPS URL inside your tailnet.
+    
+    
+    
+
+---
+
+## 12) Run the app on the server and expose the web app to reviewers with Tailscale Serve
+
 3. Share the URL with reviewers:
     - ``tailscale serve`` will show a URL similar to:
     ```text
@@ -237,3 +273,15 @@ You want PostgreSQL reachable only over Tailscale, not from the public internet.
     ```
     That is the URL reviewers should open.
 
+
+
+---
+
+## 13) Share the server machine with reviewers (Device Sharing):
+In the Tailscale Admin Console:
+1. Go to the **Machines** tab.
+2. Find your server machine, click the **three dots (… )** menu, then select **Share**.
+3. Open the **Share via email** tab.
+4. Enter the reviewer’s email address and click **Share**.
+
+---

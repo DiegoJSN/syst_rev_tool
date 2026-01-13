@@ -5,75 +5,85 @@ Reviewer (client) setup guide (Tailscale + browser access)
 ## Quick start
 
 This guide is for **reviewers** (clients). You only need:
-- **Tailscale** installed and connected to the correct tailnet
+- **Tailscale** installed and connected
 - A **browser** to open the server URL
 
 ---
 
-## 1) Ask the server admin to invite you to the server tailnet (required)
-
-You must be added to the **same Tailscale network (tailnet)** as the server.
+## 1) Ask the server admin to invite you
 
 1. **Send the server admin the email address** you use (or will use) to log into Tailscale.
-    - If you use an **institutional email** and the admin’s tailnet is tied to a different identity provider (for example, a personal email or a different institutional email), you may get an **Error 403** when trying to join. If that happens, send the admin a **personal email** (Gmail, Outlook, etc.) instead.
+   - If you use an **institutional email** and the admin’s tailnet is tied to a different identity provider (for example, a personal email or a different institutional email), you may get an **Error 403** when trying to join. If that happens, send the admin a **personal email** (Gmail, Outlook, etc.) instead.
 2. **Wait for the invitation** email from Tailscale.
-3. **Accept the invitation** and log into Tailscale using that same email account.
+3. **Accept the invitation** and **log into Tailscale** using that same email account.
 
-<img src="https://github.com/user-attachments/assets/6f514078-301c-4b5f-a943-bfd7afcf3df4" width="500" alt="1_3_1">
-<img src="https://github.com/user-attachments/assets/b57fe401-4e6b-4e10-a242-db004a0cfff9" width="390" alt="1_3_2">
-
-   
-4. **Join the tailnet** and wait for the server admin's approval.
-    - If you see **Error 403**, it usually means your email domain/identity provider is not allowed in that tailnet. Contact the server admin and ask them to send the invitation to your **personal email** instead.
-<img src="https://github.com/user-attachments/assets/ea1cc9ad-b50d-44a9-a307-8c1a9cd0e789" width="350" alt="1_4">
-<img src="https://github.com/user-attachments/assets/27c0bf46-f0cf-46f5-9637-c281212efd48" width="520" alt="1_5">
+![Invitation email and sign-in page](assets_client_setup_new/client_setup_new_page_1.png)
 
 ---
 
-## 2) Install Tailscale
+## 2) Complete the form
 
+1. Complete the form and click **“Next: Add your first device”**.
+2. You’ll be redirected to a new page: click **“Skip this introduction.”**
 
-1. Download Tailscale:
-    - [https://tailscale.com/download](https://tailscale.com/download)
-
-3. Install it like any normal application.
-
----
-
-## 3) Log in to the correct tailnet
-
-This is the step where most mistakes happen.
-
-1. Open Tailscale
-2. Click **Sign in to your network**
-<img src="https://github.com/user-attachments/assets/13ff2282-c8e0-43d6-a73a-d43687b54d12" width="380" alt="3_2">
-
-3. Log in using your email/account
-   
-4. **Important**:
-     - After logging in, **you have to select the Tailscale server admin's network** (i.e. its email address, **not yours**). In other words: you must join the **same tailnet** as the server admin, or you will not see the server and the URL will not open.
-
-<img src="https://github.com/user-attachments/assets/91ffda18-780d-4454-83e6-b1d728a5fdb2" width="450" alt="3_4">
-
-
-5. After login, click on the Tailscale app (the icon is in the taskbar), and confirm:
-    - Tailscale: **Connected**
+![Tailscale onboarding form and “Skip this introduction”](assets_client_setup_new/client_setup_new_page_2.png)
 
 ---
 
-## 4) Enable “Use Tailscale DNS settings”
+## 3) Accept device invite (again)
 
-1. In the Tailscale app settings:
-   - Make sure that **Use Tailscale DNS settings** is enabled (wording can vary slightly by OS).
+1. Go back to the invitation email and click **“Accept device invite”** again.
+2. You’ll be redirected to a page where you must click **“Accept invite.”**
+3. After clicking **“Accept invite”**, you’ll be redirected to a new page. **Refresh** that page and confirm you can see the **server name** along with the **server admin email**.
 
-<img src="https://github.com/user-attachments/assets/1f1a7651-597c-49ac-8254-534d2ce53a19" width="650" alt="4_1">
+![Accept invite and verify you can see the server](assets_client_setup_new/client_setup_new_page_3.png)
 
 ---
 
-## 5) Open the server URL
+## 4) Install Tailscale
+
+1. Download Tailscale:  
+   https://tailscale.com/download
+2. Install it like any normal application.
+
+![Download instructions](assets_client_setup_new/client_setup_new_page_4.png)
+
+---
+
+## 5) Log in and connect your device
+
+1. Click the **Tailscale icon** in your **system tray/taskbar** (Windows) or **menu bar** (macOS). You’ll be taken to the sign-in page. **Log in** with your email address.
+2. Connect your device by clicking **“Connect.”** You should see a confirmation message indicating the connection was successful (**do not close this page yet**).
+
+![Sign in and connect](assets_client_setup_new/client_setup_new_page_4.png)
+
+---
+
+## 6) Check everything is working
+
+1. After a few seconds, you’ll be redirected to another page. You should now see two devices:
+   - the **server device** (with the server admin email)
+   - **your device** (with your email)
+2. You can also click the **Tailscale icon** again to confirm it shows **“Connected.”**
+
+![Verify both devices and “Connected” status](assets_client_setup_new/client_setup_new_page_5.png)
+
+---
+
+## 7) Enable “Use Tailscale DNS settings”
+
+1. In the Tailscale app **Preferences**, make sure that **Use Tailscale DNS settings** is enabled (wording can vary slightly by OS).
+
+![DNS settings](assets_client_setup_new/client_setup_new_page_5.png)
+
+---
+
+## 8) Open the server URL
 
 1. The server admin will send you a URL similar to:
+
 ```text
 https://<tailnet-name>.<tailnet-id>.ts.net
 ```
 
+![Example URL format](assets_client_setup_new/client_setup_new_page_6.png)
