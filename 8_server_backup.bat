@@ -1,3 +1,4 @@
+echo === Run started: %date% %time% ===
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
@@ -64,3 +65,5 @@ echo Files created:
 echo   %GLOBALS_FILE%
 echo   %DB_FILE%
 pause
+
+echo === Run finished: %date% %time% ===
