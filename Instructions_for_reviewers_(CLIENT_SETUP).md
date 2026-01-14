@@ -17,7 +17,8 @@ This guide is for **reviewers** (clients). You only need:
 2. **Wait for the invitation** email from Tailscale.
 3. **Accept the invitation** and **log into Tailscale** using that same email account.
 
-![Invitation email and sign-in page](assets_client_setup_new/client_setup_new_page_1.png)
+<img src="/images/1.jpg" width="500" alt="1">
+
 
 ---
 
@@ -56,6 +57,16 @@ This guide is for **reviewers** (clients). You only need:
 2. Connect your device by clicking **“Connect.”** You should see a confirmation message indicating the connection was successful (**do not close this page yet**).
 
 ![Sign in and connect](assets_client_setup_new/client_setup_new_page_4.png)
+
+   - If you get this **error** after clicking **Connect**:
+      ```text
+      **Authorization failed**: device with nodekey:47uhjg34uyg34g78243284t2gf4ggg787g2g7 already exists; please log out explicitly and try logging in again
+   - Open the terminal of your computer (in **Windows: PowerShell**; **macOS/Linux: Terminal**) and type these commands:
+      ```bash
+      tailscale logout
+      tailscale down
+      ```
+   - After running those commands, go back to **step** 1 of this section (**5) Log in and connect your device**) and try it again.
 
 ---
 
