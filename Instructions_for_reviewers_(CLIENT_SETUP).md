@@ -101,3 +101,5 @@ This guide is for **reviewers** (clients). You only need:
 https://<tailnet-name>.<tailnet-id>.ts.net
 ```
 
+
+# FALTA AÑADIR AQUI LOS PASOS PARA ACEPTAR LA INVITACION A UN SEGUNDO DEVICE (POR SI CAMBIAS EL SERVER DE LUGAR) #
