@@ -30,6 +30,7 @@ This guide is for the **server machine** that will host:
 ---
 
 ## 2) Create the database user + database
+>**Note: If you are restoring or backing up an existing database, run ``server_backup.bat`` first and then jump to the next step "3) Allow PostgreSQL connections from your Tailscale network"**
 
 After the installation, create:
 - A dedicated database user (for example: `review_user`)
