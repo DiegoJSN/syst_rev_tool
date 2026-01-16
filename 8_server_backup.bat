@@ -4,7 +4,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 REM ======== CONFIG (EDIT THIS) ========
 set "PG_BIN=C:\Program Files\PostgreSQL\18\bin"
 set "DB_NAME=systrev_db"
-set "OUT_DIR=G:\Mi Unidad\Backups\Postgres"
+set "OUT_DIR=G:\Mi Unidad\Backups\server_pccom"
 set "PGHOST=localhost"
 set "PGPORT=5432"
 set "PGUSER=postgres"
