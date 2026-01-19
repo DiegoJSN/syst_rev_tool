@@ -40,19 +40,25 @@
         <div class="small">{{ review.participants_name }}</div>
         <hr>
         <div class="small text-muted mb-2">Edit participant names</div>
-        {% for rv in reviewers %}
-          <form method="post" class="mb-2">
-            <input type="hidden" name="action" value="rename_reviewer">
-            <input type="hidden" name="reviewer_id" value="{{ rv.id }}">
-            <div class="input-group input-group-sm">
-              <input class="form-control" name="new_name" value="{{ rv.reviewer_name }}">
-              <button class="btn btn-outline-primary">Rename</button>
-            </div>
-          </form>
-        {% endfor %}
+        <div class="d-grid gap-2">
+          {% for rv in reviewers %}
+            <button
+              type="button"
+              class="card text-start border-0 shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#renameParticipantModal"
+              data-reviewer-id="{{ rv.id }}"
+              data-reviewer-name="{{ rv.reviewer_name }}"
+            >
+              <div class="card-body py-2">
+                <div class="fw-semibold">{{ rv.reviewer_name }}</div>
+              </div>
+            </button>
+          {% endfor %}
+        </div>
         <div class="mt-3">
           <button class="btn btn-sm btn-outline-secondary" type="button" id="toggle-new-participant">
-            New participant
+            Add participant
           </button>
           <form method="post" class="mt-2 d-none" id="new-participant-form">
             <input type="hidden" name="action" value="add_reviewer">
@@ -295,6 +301,31 @@
   </div>
 </div>
 
+<div class="modal fade" id="renameParticipantModal" tabindex="-1" aria-labelledby="renameParticipantModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="renameParticipantModalLabel">Rename participant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="action" value="rename_reviewer">
+          <input type="hidden" name="reviewer_id" id="renameParticipantId">
+          <div class="mb-3">
+            <label class="form-label" for="renameParticipantInput">New name</label>
+            <input class="form-control" id="renameParticipantInput" name="new_name" type="text" autocomplete="off" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Rename</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="changeReviewTitleModal" tabindex="-1" aria-labelledby="changeReviewTitleModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -324,6 +355,7 @@
   <script>
     const toggleButton = document.getElementById("toggle-new-participant");
     const newParticipantForm = document.getElementById("new-participant-form");
+    const renameModal = document.getElementById("renameParticipantModal");
 
     if (toggleButton && newParticipantForm) {
       toggleButton.addEventListener("click", () => {
@@ -333,6 +365,26 @@
           if (input) {
             input.focus();
           }
+        }
+      });
+    }
+
+    if (renameModal) {
+      renameModal.addEventListener("show.bs.modal", (event) => {
+        const trigger = event.relatedTarget;
+        if (!trigger) {
+          return;
+        }
+        const reviewerId = trigger.getAttribute("data-reviewer-id");
+        const reviewerName = trigger.getAttribute("data-reviewer-name");
+        const idInput = renameModal.querySelector("#renameParticipantId");
+        const nameInput = renameModal.querySelector("#renameParticipantInput");
+        if (idInput) {
+          idInput.value = reviewerId || "";
+        }
+        if (nameInput) {
+          nameInput.value = reviewerName || "";
+          nameInput.focus();
         }
       });
     }
