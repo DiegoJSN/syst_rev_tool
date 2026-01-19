@@ -129,10 +129,10 @@ def init_db(app):
             WHERE t.relname IN ('first_screening', 'second_screening')
               AND c.contype = 'u'
               AND (
-                SELECT array_agg(a.attname ORDER BY a.attname)
+                SELECT array_agg(a.attname::text ORDER BY a.attname)
                 FROM pg_attribute a
                 WHERE a.attrelid = t.oid AND a.attnum = ANY (c.conkey)
-              ) = ARRAY['id_review','id_reviewer','id_study']
+              ) = ARRAY['id_review','id_reviewer','id_study']::text[]
           LOOP
             EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', r.relname, r.conname);
           END LOOP;
