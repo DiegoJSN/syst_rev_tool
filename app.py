@@ -655,6 +655,31 @@ def create_app() -> Flask:
                 flash("Title updated.", "success")
                 return redirect(url_for("review_main", review_id=review_id))
 
+            if action == "change_delete_password":
+                current_password = (request.form.get("current_delete_password") or "").strip()
+                new_password = (request.form.get("new_delete_password") or "").strip()
+                confirm_password = (request.form.get("confirm_delete_password") or "").strip()
+                if not current_password:
+                    flash("Current delete password is required.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                if not new_password:
+                    flash("New delete password is required.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                if new_password != confirm_password:
+                    flash("New delete passwords do not match.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                row = db.execute(
+                    "SELECT password FROM review WHERE id = %s;",
+                    (review_id,),
+                ).fetchone()
+                if not row or (row["password"] or "") != current_password:
+                    flash("Current delete password is incorrect.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                db.execute("UPDATE review SET password = %s WHERE id = %s;", (new_password, review_id))
+                db.commit()
+                flash("Delete password updated.", "success")
+                return redirect(url_for("review_main", review_id=review_id))
+
             if action == "rename_reviewer":
                 reviewer_id = int(request.form.get("reviewer_id"))
                 new_name = (request.form.get("new_name") or "").strip()

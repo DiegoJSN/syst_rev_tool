@@ -34,6 +34,15 @@
     </div>
 
     <div class="card shadow-sm mb-4">
+      <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h5 class="card-title mb-0">Change delete password</h5>
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#changeDeletePasswordModal">
+          Change
+        </button>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
       <div class="card-body">
         <h5 class="card-title">Participants</h5>
         <div class="small text-muted mb-2">{{ review.participants_number }} participants</div>
@@ -258,6 +267,39 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="changeDeletePasswordModal" tabindex="-1" aria-labelledby="changeDeletePasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="changeDeletePasswordModalLabel">Change delete password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="action" value="change_delete_password">
+          <div class="mb-3">
+            <label class="form-label" for="currentDeletePassword">Current password</label>
+            <input class="form-control" id="currentDeletePassword" name="current_delete_password" type="password" autocomplete="current-password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="newDeletePassword">New password</label>
+            <input class="form-control" id="newDeletePassword" name="new_delete_password" type="password" autocomplete="new-password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="confirmDeletePassword">Confirm new password</label>
+            <input class="form-control" id="confirmDeletePassword" name="confirm_delete_password" type="password" autocomplete="new-password" required>
+            <div class="form-text">Enter the new password twice to confirm.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Change</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
