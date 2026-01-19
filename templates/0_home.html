@@ -44,6 +44,7 @@
                   <th>Participants</th>
                   <th style="min-width:220px;">First screening progress</th>
                   <th style="min-width:220px;">Second screening progress</th>
+                  <th>Studies to extract</th>
                   <th></th>
                 </tr>
               </thead>
@@ -72,6 +73,9 @@
                         {{ r.second_screening_progress }}%
                       </div>
                     </div>
+                  </td>
+                  <td>
+                    <span class="fw-semibold">{{ r.to_extract }}</span>
                   </td>
                   <td class="text-end">
                     <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" onsubmit="return requestDeletePassword(event, this);">

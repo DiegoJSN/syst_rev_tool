@@ -549,7 +549,18 @@ def create_app() -> Flask:
                 flash(f"Review created (id: {review_id}).", "success")
                 return redirect(url_for("home"))
 
-        reviews = db.execute("SELECT * FROM review ORDER BY id DESC;").fetchall()
+        reviews = db.execute(
+            """
+            SELECT review.*,
+                   (
+                       SELECT COUNT(*) FROM studies
+                       WHERE id_review = review.id
+                         AND second_screening_included = 'yes'
+                   ) AS to_extract
+            FROM review
+            ORDER BY id DESC;
+            """
+        ).fetchall()
         delete_password = (os.environ.get("DELETE_PASSWORD") or "").strip()
         return render_template("0_home.html", reviews=reviews, delete_password=delete_password)
 
