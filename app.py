@@ -218,6 +218,17 @@ def create_app() -> Flask:
 
     def review_studies_dir(review_id: int) -> str:
         return os.path.join(app.root_path, "reviews", str(review_id), "studies")
+
+    def is_two_reviewer_consensus(review_id: int) -> bool:
+        db = get_db()
+        row = db.execute(
+            "SELECT two_reviewer_consensus FROM review WHERE id = %s;",
+            (review_id,),
+        ).fetchone()
+        if not row:
+            return True
+        return (row["two_reviewer_consensus"] or "yes") != "no"
+
     def pick_two_distinct_decisions_first(review_id: int, study_id: int):
         db = get_db()
         rows = db.execute(
@@ -229,17 +240,24 @@ def create_app() -> Flask:
             (review_id, study_id),
         ).fetchall()
 
-        # Keep first decision per reviewer
-        uniq = {}
-        for r in rows:
-            rid = r["id_reviewer"]
-            if rid not in uniq:
-                uniq[rid] = r["decision"]
+        if is_two_reviewer_consensus(review_id):
+            # Keep first decision per reviewer
+            uniq = {}
+            for r in rows:
+                rid = r["id_reviewer"]
+                if rid not in uniq:
+                    uniq[rid] = r["decision"]
 
-        if len(uniq) < 2:
+            if len(uniq) < 2:
+                return None
+
+            reviewers = list(uniq.items())  # [(reviewer_id, decision)]
+            return random.sample(reviewers, 2)
+
+        if len(rows) < 2:
             return None
 
-        reviewers = list(uniq.items())  # [(reviewer_id, decision)]
+        reviewers = [(r["id_reviewer"], r["decision"]) for r in rows]
         return random.sample(reviewers, 2)
 
 
@@ -291,16 +309,23 @@ def create_app() -> Flask:
             (review_id, study_id),
         ).fetchall()
 
-        uniq = {}
-        for r in rows:
-            rid = r["id_reviewer"]
-            if rid not in uniq:
-                uniq[rid] = (r["decision"], r["reason"])
+        if is_two_reviewer_consensus(review_id):
+            uniq = {}
+            for r in rows:
+                rid = r["id_reviewer"]
+                if rid not in uniq:
+                    uniq[rid] = (r["decision"], r["reason"])
 
-        if len(uniq) < 2:
+            if len(uniq) < 2:
+                return None
+
+            reviewers = list(uniq.items())  # [(reviewer_id, (decision, reason))]
+            return random.sample(reviewers, 2)
+
+        if len(rows) < 2:
             return None
 
-        reviewers = list(uniq.items())  # [(reviewer_id, (decision, reason))]
+        reviewers = [(r["id_reviewer"], (r["decision"], r["reason"])) for r in rows]
         return random.sample(reviewers, 2)
 
 
@@ -493,6 +518,9 @@ def create_app() -> Flask:
             if request.form.get("action") == "create":
                 review_name = (request.form.get("review_name") or "").strip()
                 participants_raw = (request.form.get("participants") or "").strip()
+                two_reviewer_consensus = (request.form.get("two_reviewer_consensus") or "yes").strip().lower()
+                if two_reviewer_consensus not in {"yes", "no"}:
+                    two_reviewer_consensus = "yes"
                 if not review_name:
                     flash("Please provide a review name.", "error")
                     return redirect(url_for("home"))
@@ -503,11 +531,11 @@ def create_app() -> Flask:
 
                 cur = db.execute(
                     """
-                    INSERT INTO review (review_name, participants_number, participants_name)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO review (review_name, participants_number, participants_name, two_reviewer_consensus)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING id;
                     """,
-                    (review_name, participants_number, participants_name),
+                    (review_name, participants_number, participants_name, two_reviewer_consensus),
                 )
                 review_id = cur.fetchone()["id"]
 
@@ -812,17 +840,31 @@ def create_app() -> Flask:
                 return redirect(url_for("first_screening", review_id=review_id))
 
             try:
-                db.execute(
+                existing = db.execute(
                     """
-                    INSERT INTO first_screening (id_review, id_reviewer, id_study, decision)
-                    VALUES (%s, %s, %s, %s);
+                    SELECT COUNT(*) AS c
+                    FROM first_screening
+                    WHERE id_review = %s AND id_reviewer = %s AND id_study = %s;
                     """,
-                    (review_id, reviewer_id, study_id, decision_btn),
-                )
+                    (review_id, reviewer_id, study_id),
+                ).fetchone()["c"]
+                if existing:
+                    flash("You already screened this study.", "error")
+                    return redirect(url_for("first_screening", review_id=review_id))
+
+                entries = 2 if (review.get("two_reviewer_consensus") or "yes") == "no" else 1
+                for _ in range(entries):
+                    db.execute(
+                        """
+                        INSERT INTO first_screening (id_review, id_reviewer, id_study, decision)
+                        VALUES (%s, %s, %s, %s);
+                        """,
+                        (review_id, reviewer_id, study_id, decision_btn),
+                    )
                 db.commit()
             except Exception:
                 db.rollback()
-                flash("You already screened this study.", "error")
+                flash("Unable to save your screening decision.", "error")
                 return redirect(url_for("first_screening", review_id=review_id))
 
             row = db.execute(
@@ -1254,17 +1296,31 @@ def create_app() -> Flask:
                 return redirect(url_for("second_screening", review_id=review_id, show=show))
 
             try:
-                db.execute(
+                existing = db.execute(
                     """
-                    INSERT INTO second_screening (id_review, id_reviewer, id_study, decision, reason)
-                    VALUES (%s, %s, %s, %s, %s);
+                    SELECT COUNT(*) AS c
+                    FROM second_screening
+                    WHERE id_review = %s AND id_reviewer = %s AND id_study = %s;
                     """,
-                    (review_id, reviewer_id, study_id, decision, reason_id),
-                )
+                    (review_id, reviewer_id, study_id),
+                ).fetchone()["c"]
+                if existing:
+                    flash("You already screened this study in second screening.", "error")
+                    return redirect(url_for("second_screening", review_id=review_id, show=show))
+
+                entries = 2 if (review.get("two_reviewer_consensus") or "yes") == "no" else 1
+                for _ in range(entries):
+                    db.execute(
+                        """
+                        INSERT INTO second_screening (id_review, id_reviewer, id_study, decision, reason)
+                        VALUES (%s, %s, %s, %s, %s);
+                        """,
+                        (review_id, reviewer_id, study_id, decision, reason_id),
+                    )
                 db.commit()
             except Exception:
                 db.rollback()
-                flash("You already screened this study in second screening.", "error")
+                flash("Unable to save your screening decision.", "error")
                 return redirect(url_for("second_screening", review_id=review_id, show=show))
 
             row = db.execute(

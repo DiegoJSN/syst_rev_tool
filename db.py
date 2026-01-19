@@ -49,8 +49,17 @@ def init_db(app):
             participants_name TEXT NOT NULL DEFAULT '',
             first_screening_progress INTEGER NOT NULL DEFAULT 0,
             second_screening_progress INTEGER NOT NULL DEFAULT 0,
-            duplicates_removed INTEGER NOT NULL DEFAULT 0
+            duplicates_removed INTEGER NOT NULL DEFAULT 0,
+            two_reviewer_consensus TEXT NOT NULL DEFAULT 'yes'
         );
+        """,
+        """
+        ALTER TABLE review
+        ADD COLUMN IF NOT EXISTS two_reviewer_consensus TEXT NOT NULL DEFAULT 'yes';
+        """,
+        """
+        ALTER TABLE review
+        DROP COLUMN IF EXISTS dual_screening;
         """,
         """
         CREATE TABLE IF NOT EXISTS reviewers (
@@ -100,11 +109,40 @@ def init_db(app):
             id_reviewer INTEGER NOT NULL,
             id_study INTEGER NOT NULL,
             decision TEXT NOT NULL CHECK(decision IN ('yes','no','maybe')),
-            UNIQUE(id_review, id_reviewer, id_study),
             FOREIGN KEY (id_review) REFERENCES review(id) ON DELETE CASCADE,
             FOREIGN KEY (id_reviewer) REFERENCES reviewers(id) ON DELETE CASCADE,
             FOREIGN KEY (id_study) REFERENCES studies(id) ON DELETE CASCADE
         );
+        """,
+        """
+        ALTER TABLE first_screening
+        DROP CONSTRAINT IF EXISTS first_screening_id_review_id_reviewer_id_study_key;
+        """,
+        """
+        DO $$
+        DECLARE r record;
+        BEGIN
+          FOR r IN
+            SELECT t.relname, c.conname
+            FROM pg_constraint c
+            JOIN pg_class t ON t.oid = c.conrelid
+            WHERE t.relname IN ('first_screening', 'second_screening')
+              AND c.contype = 'u'
+          LOOP
+            EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', r.relname, r.conname);
+          END LOOP;
+          FOR r IN
+            SELECT t.relname, i.relname AS idxname
+            FROM pg_index ix
+            JOIN pg_class t ON t.oid = ix.indrelid
+            JOIN pg_class i ON i.oid = ix.indexrelid
+            WHERE t.relname IN ('first_screening', 'second_screening')
+              AND ix.indisunique = true
+              AND ix.indisprimary = false
+          LOOP
+            EXECUTE format('DROP INDEX IF EXISTS %I', r.idxname);
+          END LOOP;
+        END $$;
         """,
         """
         CREATE TABLE IF NOT EXISTS first_screening_conflicts (
@@ -136,12 +174,15 @@ def init_db(app):
             id_study INTEGER NOT NULL,
             decision TEXT NOT NULL CHECK(decision IN ('yes','no')),
             reason INTEGER,
-            UNIQUE(id_review, id_reviewer, id_study),
             FOREIGN KEY (id_review) REFERENCES review(id) ON DELETE CASCADE,
             FOREIGN KEY (id_reviewer) REFERENCES reviewers(id) ON DELETE CASCADE,
             FOREIGN KEY (id_study) REFERENCES studies(id) ON DELETE CASCADE,
             FOREIGN KEY (reason) REFERENCES exclusion_reasons(id)
         );
+        """,
+        """
+        ALTER TABLE second_screening
+        DROP CONSTRAINT IF EXISTS second_screening_id_review_id_reviewer_id_study_key;
         """,
         """
         CREATE TABLE IF NOT EXISTS second_screening_conflicts (
