@@ -136,6 +136,21 @@ def init_db(app):
           LOOP
             EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', r.relname, r.conname);
           END LOOP;
+          FOR r IN
+            SELECT t.relname, i.relname AS idxname
+            FROM pg_index ix
+            JOIN pg_class t ON t.oid = ix.indrelid
+            JOIN pg_class i ON i.oid = ix.indexrelid
+            WHERE t.relname IN ('first_screening', 'second_screening')
+              AND ix.indisunique = true
+              AND (
+                SELECT array_agg(a.attname::text ORDER BY a.attname)
+                FROM pg_attribute a
+                WHERE a.attrelid = t.oid AND a.attnum = ANY (ix.indkey)
+              ) = ARRAY['id_review','id_reviewer','id_study']::text[]
+          LOOP
+            EXECUTE format('DROP INDEX IF EXISTS %I', r.idxname);
+          END LOOP;
         END $$;
         """,
         """
