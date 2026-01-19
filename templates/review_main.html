@@ -50,6 +50,18 @@
             </div>
           </form>
         {% endfor %}
+        <div class="mt-3">
+          <button class="btn btn-sm btn-outline-secondary" type="button" id="toggle-new-participant">
+            New participant
+          </button>
+          <form method="post" class="mt-2 d-none" id="new-participant-form">
+            <input type="hidden" name="action" value="add_reviewer">
+            <div class="input-group input-group-sm">
+              <input class="form-control" name="new_reviewer_name" placeholder="Participant name" required>
+              <button class="btn btn-outline-success">Add</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -249,4 +261,23 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    const toggleButton = document.getElementById("toggle-new-participant");
+    const newParticipantForm = document.getElementById("new-participant-form");
+
+    if (toggleButton && newParticipantForm) {
+      toggleButton.addEventListener("click", () => {
+        newParticipantForm.classList.toggle("d-none");
+        if (!newParticipantForm.classList.contains("d-none")) {
+          const input = newParticipantForm.querySelector("input[name='new_reviewer_name']");
+          if (input) {
+            input.focus();
+          }
+        }
+      });
+    }
+  </script>
 {% endblock %}
