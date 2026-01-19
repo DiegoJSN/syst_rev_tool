@@ -52,6 +52,27 @@
             {% if s.doi %}
               <div class="mt-2"><a href="{{ doi_url(s.doi) }}" target="_blank" rel="noopener">DOI: {{ s.doi }}</a></div>
             {% endif %}
+            <div class="mt-2">
+              {% if s.file_name %}
+                <div class="d-inline-flex flex-wrap gap-2 align-items-center">
+                  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('read_full_text', review_id=review.id, study_id=s.id) }}" target="_blank" rel="noopener">Read full text</a>
+                  <form method="post" action="{{ url_for('delete_full_text', review_id=review.id, study_id=s.id) }}" class="d-inline">
+                    <input type="hidden" name="page" value="{{ page }}">
+                    <input type="hidden" name="per_page" value="{{ per_page }}">
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Remove the uploaded PDF for this study?')">Delete PDF</button>
+                  </form>
+                </div>
+              {% else %}
+                <form method="post" action="{{ url_for('upload_full_text', review_id=review.id, study_id=s.id) }}" enctype="multipart/form-data" class="d-inline">
+                  <input type="hidden" name="page" value="{{ page }}">
+                  <input type="hidden" name="per_page" value="{{ per_page }}">
+                  <input type="hidden" name="sort" value="{{ sort }}">
+                  <input type="file" class="d-none" name="full_text" id="full_text_{{ s.id }}" accept="application/pdf" onchange="this.form.submit()">
+                  <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('full_text_{{ s.id }}').click()">Upload full text</button>
+                </form>
+              {% endif %}
+            </div>
 
             <hr>
             <div class="fw-semibold mb-2">Conflict between</div>
