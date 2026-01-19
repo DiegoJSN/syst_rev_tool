@@ -646,9 +646,21 @@ def create_app() -> Flask:
                 return redirect(url_for("review_main", review_id=review_id))
 
             if action == "change_title":
+                current_title = (request.form.get("current_title") or "").strip()
                 new_title = (request.form.get("new_title") or "").strip()
+                confirm_title = (request.form.get("confirm_title") or "").strip()
+                if not current_title:
+                    flash("Current title is required.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
                 if not new_title:
-                    flash("Title cannot be empty.", "error")
+                    flash("New title cannot be empty.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                if new_title != confirm_title:
+                    flash("New titles do not match.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                row = db.execute("SELECT review_name FROM review WHERE id = %s;", (review_id,)).fetchone()
+                if not row or (row["review_name"] or "") != current_title:
+                    flash("Current title is incorrect.", "error")
                     return redirect(url_for("review_main", review_id=review_id))
                 db.execute("UPDATE review SET review_name = %s WHERE id = %s;", (new_title, review_id))
                 db.commit()

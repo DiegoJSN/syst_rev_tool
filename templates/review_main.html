@@ -21,15 +21,11 @@
 <div class="row g-4">
   <div class="col-lg-4">
     <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h5 class="card-title">Change review title</h5>
-        <form method="post">
-          <input type="hidden" name="action" value="change_title">
-          <div class="input-group">
-            <input class="form-control" name="new_title" value="{{ review.review_name }}">
-            <button class="btn btn-primary">Save</button>
-          </div>
-        </form>
+      <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h5 class="card-title mb-0">Change review title</h5>
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#changeReviewTitleModal">
+          Change
+        </button>
       </div>
     </div>
 
@@ -293,6 +289,39 @@
             <label class="form-label" for="confirmDeletePassword">Confirm new password</label>
             <input class="form-control" id="confirmDeletePassword" name="confirm_delete_password" type="password" autocomplete="new-password" required>
             <div class="form-text">Enter the new password twice to confirm.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Change</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="changeReviewTitleModal" tabindex="-1" aria-labelledby="changeReviewTitleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="changeReviewTitleModalLabel">Change review title</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="action" value="change_title">
+          <div class="mb-3">
+            <label class="form-label" for="currentReviewTitle">Current title</label>
+            <input class="form-control" id="currentReviewTitle" name="current_title" type="text" autocomplete="off" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="newReviewTitle">New title</label>
+            <input class="form-control" id="newReviewTitle" name="new_title" type="text" autocomplete="off" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="confirmReviewTitle">Confirm new title</label>
+            <input class="form-control" id="confirmReviewTitle" name="confirm_title" type="text" autocomplete="off" required>
+            <div class="form-text">Enter the new title twice to confirm.</div>
           </div>
         </div>
         <div class="modal-footer">
