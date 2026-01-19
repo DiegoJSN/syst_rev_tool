@@ -41,7 +41,7 @@
   <div class="row g-3">
     {% for s in studies %}
       <div class="col-12">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm" id="study-{{ s.id }}">
           <div class="card-body">
             <div class="small text-muted">Study ID {{ s.id }}</div>
             <h5 class="mb-1">{{ s.title or "Untitled" }}</h5>
@@ -60,6 +60,7 @@
                     <input type="hidden" name="page" value="{{ page }}">
                     <input type="hidden" name="per_page" value="{{ per_page }}">
                     <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="return_to" value="second_screening_conflicts">
                     <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Remove the uploaded PDF for this study?')">Delete PDF</button>
                   </form>
                 </div>
@@ -68,6 +69,7 @@
                   <input type="hidden" name="page" value="{{ page }}">
                   <input type="hidden" name="per_page" value="{{ per_page }}">
                   <input type="hidden" name="sort" value="{{ sort }}">
+                  <input type="hidden" name="return_to" value="second_screening_conflicts">
                   <input type="file" class="d-none" name="full_text" id="full_text_{{ s.id }}" accept="application/pdf" onchange="this.form.submit()">
                   <button class="btn btn-outline-primary btn-sm" type="button" onclick="document.getElementById('full_text_{{ s.id }}').click()">Upload full text</button>
                 </form>
