@@ -197,6 +197,9 @@ def create_app() -> Flask:
                 out.append(name)
         return out
 
+    def is_dual_screening(review: dict) -> bool:
+        return (review.get("dual_screening") or "yes").strip().lower() == "yes"
+
     def safe_filename(name: str) -> str:
         # minimal filename sanitizer
         keep = []
@@ -218,7 +221,7 @@ def create_app() -> Flask:
 
     def review_studies_dir(review_id: int) -> str:
         return os.path.join(app.root_path, "reviews", str(review_id), "studies")
-    def pick_two_distinct_decisions_first(review_id: int, study_id: int):
+    def pick_two_distinct_decisions_first(review_id: int, study_id: int, dual_screening: bool):
         db = get_db()
         rows = db.execute(
             """
@@ -228,6 +231,12 @@ def create_app() -> Flask:
             """,
             (review_id, study_id),
         ).fetchall()
+
+        if dual_screening:
+            if len(rows) < 2:
+                return None
+            decisions = [(r["id_reviewer"], r["decision"]) for r in rows]
+            return random.sample(decisions, 2)
 
         # Keep first decision per reviewer
         uniq = {}
@@ -243,9 +252,9 @@ def create_app() -> Flask:
         return random.sample(reviewers, 2)
 
 
-    def consolidate_first(review_id: int, study_id: int):
+    def consolidate_first(review_id: int, study_id: int, dual_screening: bool):
         db = get_db()
-        pair = pick_two_distinct_decisions_first(review_id, study_id)
+        pair = pick_two_distinct_decisions_first(review_id, study_id, dual_screening)
         if not pair:
             return
 
@@ -280,7 +289,7 @@ def create_app() -> Flask:
                 (outcome, review_id, study_id),
             )
         db.commit()
-    def pick_two_distinct_decisions_second(review_id: int, study_id: int):
+    def pick_two_distinct_decisions_second(review_id: int, study_id: int, dual_screening: bool):
         db = get_db()
         rows = db.execute(
             """
@@ -290,6 +299,12 @@ def create_app() -> Flask:
             """,
             (review_id, study_id),
         ).fetchall()
+
+        if dual_screening:
+            if len(rows) < 2:
+                return None
+            decisions = [(r["id_reviewer"], (r["decision"], r["reason"])) for r in rows]
+            return random.sample(decisions, 2)
 
         uniq = {}
         for r in rows:
@@ -304,9 +319,9 @@ def create_app() -> Flask:
         return random.sample(reviewers, 2)
 
 
-    def consolidate_second(review_id: int, study_id: int):
+    def consolidate_second(review_id: int, study_id: int, dual_screening: bool):
         db = get_db()
-        pair = pick_two_distinct_decisions_second(review_id, study_id)
+        pair = pick_two_distinct_decisions_second(review_id, study_id, dual_screening)
         if not pair:
             return
 
@@ -493,6 +508,9 @@ def create_app() -> Flask:
             if request.form.get("action") == "create":
                 review_name = (request.form.get("review_name") or "").strip()
                 participants_raw = (request.form.get("participants") or "").strip()
+                dual_screening = (request.form.get("dual_screening") or "yes").strip().lower()
+                if dual_screening not in {"yes", "no"}:
+                    dual_screening = "yes"
                 if not review_name:
                     flash("Please provide a review name.", "error")
                     return redirect(url_for("home"))
@@ -503,11 +521,11 @@ def create_app() -> Flask:
 
                 cur = db.execute(
                     """
-                    INSERT INTO review (review_name, participants_number, participants_name)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO review (review_name, participants_number, participants_name, dual_screening)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING id;
                     """,
-                    (review_name, participants_number, participants_name),
+                    (review_name, participants_number, participants_name, dual_screening),
                 )
                 review_id = cur.fetchone()["id"]
 
@@ -806,19 +824,22 @@ def create_app() -> Flask:
             study_id = int(request.form.get("study_id"))
             decision_btn = request.form.get("decision")
             notes = request.form.get("notes") or ""
+            dual_screening = is_dual_screening(review)
 
             if decision_btn not in ("no", "maybe", "yes"):
                 flash("Invalid decision.", "error")
                 return redirect(url_for("first_screening", review_id=review_id))
 
             try:
-                db.execute(
-                    """
-                    INSERT INTO first_screening (id_review, id_reviewer, id_study, decision)
-                    VALUES (%s, %s, %s, %s);
-                    """,
-                    (review_id, reviewer_id, study_id, decision_btn),
-                )
+                vote_indexes = (1, 2) if dual_screening else (1,)
+                for vote_index in vote_indexes:
+                    db.execute(
+                        """
+                        INSERT INTO first_screening (id_review, id_reviewer, id_study, decision, vote_index)
+                        VALUES (%s, %s, %s, %s, %s);
+                        """,
+                        (review_id, reviewer_id, study_id, decision_btn, vote_index),
+                    )
                 db.commit()
             except Exception:
                 db.rollback()
@@ -836,7 +857,7 @@ def create_app() -> Flask:
             )
             db.commit()
 
-            consolidate_first(review_id, study_id)
+            consolidate_first(review_id, study_id, dual_screening)
             refresh_cached_metrics(review_id)
             return redirect(url_for("first_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
 
@@ -1238,6 +1259,7 @@ def create_app() -> Flask:
             action = request.form.get("action")
             notes = request.form.get("notes") or ""
             show = parse_show_value(request.form.get("show"))
+            dual_screening = is_dual_screening(review)
 
             if action == "include":
                 decision = "yes"
@@ -1254,13 +1276,15 @@ def create_app() -> Flask:
                 return redirect(url_for("second_screening", review_id=review_id, show=show))
 
             try:
-                db.execute(
-                    """
-                    INSERT INTO second_screening (id_review, id_reviewer, id_study, decision, reason)
-                    VALUES (%s, %s, %s, %s, %s);
-                    """,
-                    (review_id, reviewer_id, study_id, decision, reason_id),
-                )
+                vote_indexes = (1, 2) if dual_screening else (1,)
+                for vote_index in vote_indexes:
+                    db.execute(
+                        """
+                        INSERT INTO second_screening (id_review, id_reviewer, id_study, decision, reason, vote_index)
+                        VALUES (%s, %s, %s, %s, %s, %s);
+                        """,
+                        (review_id, reviewer_id, study_id, decision, reason_id, vote_index),
+                    )
                 db.commit()
             except Exception:
                 db.rollback()
@@ -1278,7 +1302,7 @@ def create_app() -> Flask:
             )
             db.commit()
 
-            consolidate_second(review_id, study_id)
+            consolidate_second(review_id, study_id, dual_screening)
             refresh_cached_metrics(review_id)
             return redirect(
                 url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort, show=show)

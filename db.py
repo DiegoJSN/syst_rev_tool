@@ -49,8 +49,13 @@ def init_db(app):
             participants_name TEXT NOT NULL DEFAULT '',
             first_screening_progress INTEGER NOT NULL DEFAULT 0,
             second_screening_progress INTEGER NOT NULL DEFAULT 0,
-            duplicates_removed INTEGER NOT NULL DEFAULT 0
+            duplicates_removed INTEGER NOT NULL DEFAULT 0,
+            dual_screening TEXT NOT NULL DEFAULT 'yes'
         );
+        """,
+        """
+        ALTER TABLE review
+        ADD COLUMN IF NOT EXISTS dual_screening TEXT NOT NULL DEFAULT 'yes';
         """,
         """
         CREATE TABLE IF NOT EXISTS reviewers (
@@ -100,11 +105,23 @@ def init_db(app):
             id_reviewer INTEGER NOT NULL,
             id_study INTEGER NOT NULL,
             decision TEXT NOT NULL CHECK(decision IN ('yes','no','maybe')),
-            UNIQUE(id_review, id_reviewer, id_study),
+            vote_index INTEGER NOT NULL DEFAULT 1,
             FOREIGN KEY (id_review) REFERENCES review(id) ON DELETE CASCADE,
             FOREIGN KEY (id_reviewer) REFERENCES reviewers(id) ON DELETE CASCADE,
             FOREIGN KEY (id_study) REFERENCES studies(id) ON DELETE CASCADE
         );
+        """,
+        """
+        ALTER TABLE first_screening
+        ADD COLUMN IF NOT EXISTS vote_index INTEGER NOT NULL DEFAULT 1;
+        """,
+        """
+        ALTER TABLE first_screening
+        DROP CONSTRAINT IF EXISTS first_screening_id_review_id_reviewer_id_study_key;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_first_screening_unique_vote
+        ON first_screening(id_review, id_reviewer, id_study, vote_index);
         """,
         """
         CREATE TABLE IF NOT EXISTS first_screening_conflicts (
@@ -136,12 +153,24 @@ def init_db(app):
             id_study INTEGER NOT NULL,
             decision TEXT NOT NULL CHECK(decision IN ('yes','no')),
             reason INTEGER,
-            UNIQUE(id_review, id_reviewer, id_study),
+            vote_index INTEGER NOT NULL DEFAULT 1,
             FOREIGN KEY (id_review) REFERENCES review(id) ON DELETE CASCADE,
             FOREIGN KEY (id_reviewer) REFERENCES reviewers(id) ON DELETE CASCADE,
             FOREIGN KEY (id_study) REFERENCES studies(id) ON DELETE CASCADE,
             FOREIGN KEY (reason) REFERENCES exclusion_reasons(id)
         );
+        """,
+        """
+        ALTER TABLE second_screening
+        ADD COLUMN IF NOT EXISTS vote_index INTEGER NOT NULL DEFAULT 1;
+        """,
+        """
+        ALTER TABLE second_screening
+        DROP CONSTRAINT IF EXISTS second_screening_id_review_id_reviewer_id_study_key;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_second_screening_unique_vote
+        ON second_screening(id_review, id_reviewer, id_study, vote_index);
         """,
         """
         CREATE TABLE IF NOT EXISTS second_screening_conflicts (

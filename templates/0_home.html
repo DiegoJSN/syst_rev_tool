@@ -8,6 +8,13 @@
         <form method="post">
           <input type="hidden" name="action" value="create">
           <div class="mb-3">
+            <label class="form-label">Dual screening?</label>
+            <select class="form-select" name="dual_screening">
+              <option value="yes" selected>Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div class="mb-3">
             <label class="form-label">Review name</label>
             <input class="form-control" name="review_name" placeholder="e.g., Pastoralism drylands 1980–2020" required>
           </div>
