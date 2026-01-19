@@ -1156,7 +1156,7 @@ def create_app() -> Flask:
             sort = "random"
         show = parse_show_value(request.form.get("show"))
         return_to = request.form.get("return_to", "second_screening")
-        if return_to not in {"second_screening", "full_extraction"}:
+        if return_to not in {"second_screening", "full_extraction", "second_screening_conflicts"}:
             return_to = "second_screening"
 
         upload = request.files.get("full_text")
@@ -1220,7 +1220,7 @@ def create_app() -> Flask:
             sort = "random"
         show = parse_show_value(request.form.get("show"))
         return_to = request.form.get("return_to", "second_screening")
-        if return_to not in {"second_screening", "full_extraction"}:
+        if return_to not in {"second_screening", "full_extraction", "second_screening_conflicts"}:
             return_to = "second_screening"
 
         if study.get("file_name") and not study.get("file_data"):
