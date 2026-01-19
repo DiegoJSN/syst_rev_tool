@@ -12,6 +12,13 @@
             <input class="form-control" name="review_name" placeholder="e.g., Pastoralism drylands 1980–2020" required>
           </div>
           <div class="mb-3">
+            <label class="form-label">Two-reviewer consensus?</label>
+            <select class="form-select" name="two_reviewer_consensus">
+              <option value="yes" selected>yes</option>
+              <option value="no">no</option>
+            </select>
+          </div>
+          <div class="mb-3">
             <label class="form-label">Participants (separated by ;)</label>
             <textarea class="form-control" name="participants" rows="4" placeholder="Alice; Bob; Charlie"></textarea>
             <div class="form-text">These names will be used for “double verification” login.</div>
