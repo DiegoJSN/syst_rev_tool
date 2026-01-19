@@ -634,6 +634,37 @@ def create_app() -> Flask:
                 flash("Reviewer renamed.", "success")
                 return redirect(url_for("review_main", review_id=review_id))
 
+            if action == "add_reviewer":
+                new_name = (request.form.get("new_reviewer_name") or "").strip()
+                if not new_name:
+                    flash("Name cannot be empty.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+
+                try:
+                    db.execute(
+                        "INSERT INTO reviewers (id_review, reviewer_name) VALUES (%s, %s);",
+                        (review_id, new_name),
+                    )
+                    db.commit()
+                except Exception:
+                    db.rollback()
+                    flash("Add participant failed (maybe duplicate name).", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+
+                rows = db.execute(
+                    "SELECT reviewer_name FROM reviewers WHERE id_review = %s ORDER BY id;",
+                    (review_id,),
+                ).fetchall()
+                participants_name = "; ".join([r["reviewer_name"] for r in rows])
+                db.execute(
+                    "UPDATE review SET participants_name = %s, participants_number = %s WHERE id = %s;",
+                    (participants_name, len(rows), review_id),
+                )
+                db.commit()
+
+                flash("Participant added.", "success")
+                return redirect(url_for("review_main", review_id=review_id))
+
             if action == "import_studies":
                 wos = request.files.get("wos_file")
                 scopus = request.files.get("scopus_file")
