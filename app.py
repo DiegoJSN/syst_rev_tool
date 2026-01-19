@@ -521,8 +521,16 @@ def create_app() -> Flask:
                 two_reviewer_consensus = (request.form.get("two_reviewer_consensus") or "yes").strip().lower()
                 if two_reviewer_consensus not in {"yes", "no"}:
                     two_reviewer_consensus = "yes"
+                delete_password = (request.form.get("delete_password") or "").strip()
+                delete_password_confirm = (request.form.get("delete_password_confirm") or "").strip()
                 if not review_name:
                     flash("Please provide a review name.", "error")
+                    return redirect(url_for("home"))
+                if not delete_password:
+                    flash("Please provide a delete password.", "error")
+                    return redirect(url_for("home"))
+                if delete_password != delete_password_confirm:
+                    flash("Delete passwords do not match.", "error")
                     return redirect(url_for("home"))
 
                 participants = split_participants(participants_raw)
@@ -531,11 +539,17 @@ def create_app() -> Flask:
 
                 cur = db.execute(
                     """
-                    INSERT INTO review (review_name, participants_number, participants_name, two_reviewer_consensus)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO review (review_name, participants_number, participants_name, two_reviewer_consensus, password)
+                    VALUES (%s, %s, %s, %s, %s)
                     RETURNING id;
                     """,
-                    (review_name, participants_number, participants_name, two_reviewer_consensus),
+                    (
+                        review_name,
+                        participants_number,
+                        participants_name,
+                        two_reviewer_consensus,
+                        delete_password,
+                    ),
                 )
                 review_id = cur.fetchone()["id"]
 
@@ -561,12 +575,19 @@ def create_app() -> Flask:
             ORDER BY id DESC;
             """
         ).fetchall()
-        delete_password = (os.environ.get("DELETE_PASSWORD") or "").strip()
-        return render_template("0_home.html", reviews=reviews, delete_password=delete_password)
+        return render_template("0_home.html", reviews=reviews)
 
     @app.route("/review/<int:review_id>/delete", methods=["POST"])
     def delete_review(review_id: int):
         db = get_db()
+        delete_password = (request.form.get("delete_password") or "").strip()
+        row = db.execute("SELECT password FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not row:
+            flash("Review not found.", "error")
+            return redirect(url_for("home"))
+        if delete_password != (row["password"] or ""):
+            flash("Incorrect delete password.", "error")
+            return redirect(url_for("home"))
         db.execute("DELETE FROM review WHERE id = %s;", (review_id,))
         db.commit()
         if session.get("login", {}).get("review_id") == review_id:
@@ -627,11 +648,36 @@ def create_app() -> Flask:
             if action == "change_title":
                 new_title = (request.form.get("new_title") or "").strip()
                 if not new_title:
-                    flash("Title cannot be empty.", "error")
+                    flash("New title cannot be empty.", "error")
                     return redirect(url_for("review_main", review_id=review_id))
                 db.execute("UPDATE review SET review_name = %s WHERE id = %s;", (new_title, review_id))
                 db.commit()
                 flash("Title updated.", "success")
+                return redirect(url_for("review_main", review_id=review_id))
+
+            if action == "change_delete_password":
+                current_password = (request.form.get("current_delete_password") or "").strip()
+                new_password = (request.form.get("new_delete_password") or "").strip()
+                confirm_password = (request.form.get("confirm_delete_password") or "").strip()
+                if not current_password:
+                    flash("Current delete password is required.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                if not new_password:
+                    flash("New delete password is required.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                if new_password != confirm_password:
+                    flash("New delete passwords do not match.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                row = db.execute(
+                    "SELECT password FROM review WHERE id = %s;",
+                    (review_id,),
+                ).fetchone()
+                if not row or (row["password"] or "") != current_password:
+                    flash("Current delete password is incorrect.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                db.execute("UPDATE review SET password = %s WHERE id = %s;", (new_password, review_id))
+                db.commit()
+                flash("Delete password updated.", "success")
                 return redirect(url_for("review_main", review_id=review_id))
 
             if action == "rename_reviewer":
