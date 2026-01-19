@@ -106,17 +106,19 @@
                 </div>
               </div>
             </form>
-            <div class="mt-2">
-              {% if logged %}
-                <div class="small text-muted">Logged in as</div>
-                <div class="fw-semibold">{{ logged.reviewer_name }}</div>
-                <form method="post" class="mt-2">
-                  <input type="hidden" name="action" value="logout">
-                  <button class="btn btn-sm btn-outline-secondary">Log out</button>
-                </form>
-              {% else %}
-                <div class="small text-muted">Not logged in</div>
-              {% endif %}
+            <div class="d-flex justify-content-end mt-2">
+              <div class="text-end">
+                {% if logged %}
+                  <div class="small text-muted">Logged in as</div>
+                  <div class="fw-semibold">{{ logged.reviewer_name }}</div>
+                  <form method="post" class="mt-2">
+                    <input type="hidden" name="action" value="logout">
+                    <button class="btn btn-sm btn-outline-secondary">Log out</button>
+                  </form>
+                {% else %}
+                  <div class="small text-muted">Not logged in</div>
+                {% endif %}
+              </div>
             </div>
             <button class="btn btn-success mt-3" form="login-form">Log in</button>
             <div class="form-text mt-2">Double verification required.</div>
