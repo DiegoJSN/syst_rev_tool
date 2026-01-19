@@ -183,7 +183,7 @@ def create_app() -> Flask:
     def require_login(review_id: int) -> Tuple[int, str]:
         login = session.get("login")
         if not login or login.get("review_id") != review_id:
-            raise PermissionError("Please select your name (double verification) in the main page.")
+            raise PermissionError("Please select your name (double verification) in the \"Log in as\" section")
         return int(login["reviewer_id"]), str(login["reviewer_name"])
 
     def split_participants(text: str) -> List[str]:
