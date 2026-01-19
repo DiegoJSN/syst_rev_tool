@@ -50,12 +50,17 @@ def init_db(app):
             first_screening_progress INTEGER NOT NULL DEFAULT 0,
             second_screening_progress INTEGER NOT NULL DEFAULT 0,
             duplicates_removed INTEGER NOT NULL DEFAULT 0,
-            two_reviewer_consensus TEXT NOT NULL DEFAULT 'yes'
+            two_reviewer_consensus TEXT NOT NULL DEFAULT 'yes',
+            password TEXT NOT NULL DEFAULT ''
         );
         """,
         """
         ALTER TABLE review
         ADD COLUMN IF NOT EXISTS two_reviewer_consensus TEXT NOT NULL DEFAULT 'yes';
+        """,
+        """
+        ALTER TABLE review
+        ADD COLUMN IF NOT EXISTS password TEXT NOT NULL DEFAULT '';
         """,
         """
         ALTER TABLE review

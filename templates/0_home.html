@@ -19,6 +19,19 @@
             </select>
           </div>
           <div class="mb-3">
+            <label class="form-label" for="deletePasswordInputCreate">Delete password</label>
+            <input class="form-control" id="deletePasswordInputCreate" name="delete_password" type="password" autocomplete="new-password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="deletePasswordConfirmCreate">Confirm delete password</label>
+            <input class="form-control" id="deletePasswordConfirmCreate" name="delete_password_confirm" type="password" autocomplete="new-password" required>
+            <div class="form-text">Enter the delete password twice to confirm.</div>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="toggleDeletePasswordCreate">
+            <label class="form-check-label" for="toggleDeletePasswordCreate">Show delete password</label>
+          </div>
+          <div class="mb-3">
             <label class="form-label">Participants (separated by ;)</label>
             <textarea class="form-control" name="participants" rows="4" placeholder="Alice; Bob; Charlie"></textarea>
             <div class="form-text">These names will be used for “double verification” login.</div>
@@ -79,6 +92,7 @@
                   </td>
                   <td class="text-end">
                     <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" onsubmit="return requestDeletePassword(event, this);">
+                      <input type="hidden" name="delete_password" class="delete-password-field">
                       <button class="btn btn-sm btn-outline-danger">Delete</button>
                     </form>
                   </td>
@@ -103,6 +117,10 @@
         <label class="form-label" for="deletePasswordInput">Password</label>
         <input type="password" class="form-control" id="deletePasswordInput" placeholder="password" autocomplete="off">
         <div class="form-text">Enter the delete password to continue.</div>
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" id="toggleDeletePasswordModal">
+          <label class="form-check-label" for="toggleDeletePasswordModal">Show password</label>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -112,7 +130,6 @@
   </div>
 </div>
 <script>
-  const deletePassword = {{ delete_password | tojson }};
   let deleteFormToSubmit = null;
 
   function requestDeletePassword(event, form) {
@@ -120,24 +137,66 @@
     deleteFormToSubmit = form;
     const input = document.getElementById("deletePasswordInput");
     input.value = "";
+    const toggle = document.getElementById("toggleDeletePasswordModal");
+    if (toggle) {
+      toggle.checked = false;
+    }
+    input.type = "password";
     const modal = new bootstrap.Modal(document.getElementById("deletePasswordModal"));
     modal.show();
     return false;
   }
 
   function confirmDeletePassword() {
-    if (!deletePassword) {
-      alert("Delete password is not configured.");
-      return;
-    }
     const input = document.getElementById("deletePasswordInput");
-    if (input.value !== deletePassword) {
-      alert("Incorrect password.");
-      return;
-    }
     if (deleteFormToSubmit) {
+      const hiddenInput = deleteFormToSubmit.querySelector(".delete-password-field");
+      if (hiddenInput) {
+        hiddenInput.value = input.value;
+      }
       deleteFormToSubmit.submit();
     }
   }
+
+  function toggleDeletePasswordVisibility() {
+    const createToggle = document.getElementById("toggleDeletePasswordCreate");
+    const modalToggle = document.getElementById("toggleDeletePasswordModal");
+    const createInputs = [
+      document.getElementById("deletePasswordInputCreate"),
+      document.getElementById("deletePasswordConfirmCreate"),
+    ];
+    if (createToggle) {
+      const type = createToggle.checked ? "text" : "password";
+      createInputs.forEach((input) => {
+        if (input) {
+          input.type = type;
+        }
+      });
+    }
+    if (modalToggle) {
+      const modalInput = document.getElementById("deletePasswordInput");
+      if (modalInput) {
+        modalInput.type = modalToggle.checked ? "text" : "password";
+      }
+    }
+  }
+
+  function validateDeletePasswordMatch() {
+    const password = document.getElementById("deletePasswordInputCreate");
+    const confirmPassword = document.getElementById("deletePasswordConfirmCreate");
+    if (!password || !confirmPassword) {
+      return;
+    }
+    if (confirmPassword.value && password.value !== confirmPassword.value) {
+      confirmPassword.setCustomValidity("Delete passwords do not match.");
+    } else {
+      confirmPassword.setCustomValidity("");
+    }
+  }
+
+  document.getElementById("toggleDeletePasswordCreate")?.addEventListener("change", toggleDeletePasswordVisibility);
+  document.getElementById("toggleDeletePasswordModal")?.addEventListener("change", toggleDeletePasswordVisibility);
+  document.getElementById("deletePasswordInputCreate")?.addEventListener("input", validateDeletePasswordMatch);
+  document.getElementById("deletePasswordConfirmCreate")?.addEventListener("input", validateDeletePasswordMatch);
 </script>
 {% endblock %}
