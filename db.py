@@ -119,6 +119,26 @@ def init_db(app):
         DROP CONSTRAINT IF EXISTS first_screening_id_review_id_reviewer_id_study_key;
         """,
         """
+        DO $$
+        DECLARE r record;
+        BEGIN
+          FOR r IN
+            SELECT t.relname, c.conname
+            FROM pg_constraint c
+            JOIN pg_class t ON t.oid = c.conrelid
+            WHERE t.relname IN ('first_screening', 'second_screening')
+              AND c.contype = 'u'
+              AND (
+                SELECT array_agg(a.attname ORDER BY a.attname)
+                FROM pg_attribute a
+                WHERE a.attrelid = t.oid AND a.attnum = ANY (c.conkey)
+              ) = ARRAY['id_review','id_reviewer','id_study']
+          LOOP
+            EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', r.relname, r.conname);
+          END LOOP;
+        END $$;
+        """,
+        """
         CREATE TABLE IF NOT EXISTS first_screening_conflicts (
             id_review INTEGER NOT NULL,
             id_reviewer INTEGER NOT NULL,
