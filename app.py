@@ -1605,6 +1605,52 @@ def create_app() -> Flask:
 
         return render_template("list_of_studies.html", review=review, rows=rows)
 
+    @app.route("/<int:review_id>_first_screening_irrelevant.html")
+    def first_screening_irrelevant(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        rows = db.execute(
+            """
+            SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
+                   er.reason AS exclusion_reason_text
+            FROM studies s
+            LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
+            WHERE s.id_review = %s
+              AND s.first_screening_included = 'no'
+            ORDER BY s.id ASC;
+            """,
+            (review_id,),
+        ).fetchall()
+
+        return render_template("first_screening_irrelevant.html", review=review, rows=rows)
+
+    @app.route("/<int:review_id>_second_screening_excluded.html")
+    def second_screening_excluded(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        rows = db.execute(
+            """
+            SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
+                   er.reason AS exclusion_reason_text
+            FROM studies s
+            LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
+            WHERE s.id_review = %s
+              AND s.second_screening_included = 'no'
+            ORDER BY s.id ASC;
+            """,
+            (review_id,),
+        ).fetchall()
+
+        return render_template("second_screening_excluded.html", review=review, rows=rows)
+
     @app.route("/review/<int:review_id>/full_extraction.html")
     def full_extraction(review_id: int):
         db = get_db()
