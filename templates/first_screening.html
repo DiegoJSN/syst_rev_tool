@@ -47,6 +47,7 @@
               <div>
                 <div class="small text-muted">Study ID {{ study.id }}</div>
                 <h5 class="mb-1">{{ study.title or "Untitled" }}</h5>
+                <div class="small text-muted">{{ study.source_title or "Unknown journal" }}</div>
                 <div class="small text-muted">{{ study.authors }}</div>
                 {% if study.year %}
                   <div class="small text-muted">{{ study.year }}</div>
