@@ -45,6 +45,7 @@
           <div class="card-body">
             <div class="small text-muted">Study ID {{ s.id }}</div>
             <h5 class="mb-1">{{ s.title or "Untitled" }}</h5>
+            <div class="small text-muted">{{ s.source_title or "Unknown journal" }}</div>
             <div class="small text-muted">{{ s.authors }}</div>
             {% if s.year %}
               <div class="small text-muted">{{ s.year }}</div>
