@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-0">Second screening — Excluded studies</h4>
+    <div class="text-muted small">Review {{ review.id }} — {{ review.review_name }}</div>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+  <input type="hidden" name="page" value="1">
+  <div class="col-auto">
+    <label class="form-label small">Studies per page</label>
+    <select class="form-select form-select-sm" name="per_page">
+      <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+      <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+      <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <label class="form-label small">Order by</label>
+    <select class="form-select form-select-sm" name="sort">
+      <option value="id" {% if sort == "id" %}selected{% endif %}>Study ID</option>
+      <option value="authors" {% if sort == "authors" %}selected{% endif %}>Authors</option>
+      <option value="title" {% if sort == "title" %}selected{% endif %}>Title</option>
+      <option value="random" {% if sort == "random" %}selected{% endif %}>Random</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-outline-primary btn-sm" type="submit">Apply</button>
+  </div>
+  <div class="col-auto ms-auto">
+    <div class="text-muted small">Showing {{ studies|length }} of {{ total }} excluded</div>
+  </div>
+</form>
+
+{% if not studies %}
+  <div class="alert alert-info">No excluded studies found.</div>
+{% else %}
+  <div class="row g-3">
+    {% for study in studies %}
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="small text-muted">Study ID {{ study.id }}</div>
+            <h5 class="mb-1">{{ study.title or "Untitled" }}</h5>
+            <div class="small text-muted">{{ study.source_title or "Unknown journal" }}</div>
+            <div class="small text-muted">{{ study.authors }}</div>
+            {% if study.year %}
+              <div class="small text-muted">{{ study.year }}</div>
+            {% endif %}
+            {% if study.doi %}
+              <div class="mt-2">
+                <a href="{{ doi_url(study.doi) }}" target="_blank" rel="noopener">DOI: {{ study.doi }}</a>
+              </div>
+            {% endif %}
+
+            <hr>
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Abstract</div>
+              <div class="text-muted" style="white-space: pre-wrap;">{{ study.abstract or "" }}</div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="fw-semibold mb-1">First screening notes</div>
+                {% if study.first_screening_notes %}
+                  <ul class="mb-0">
+                    {% for note in study.first_screening_notes.split(";$]") %}
+                      {% if note|trim %}
+                        <li>{{ note|trim }}</li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <div class="text-muted small">No notes.</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <div class="fw-semibold mb-1">Second screening notes</div>
+                {% if study.second_screening_notes %}
+                  <ul class="mb-0">
+                    {% for note in study.second_screening_notes.split(";$]") %}
+                      {% if note|trim %}
+                        <li>{{ note|trim }}</li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <div class="text-muted small">No notes.</div>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if study.exclusion_reason_hierarchy %}
+              <div class="mt-3 small">
+                <span class="fw-semibold">Exclusion reason:</span>
+                {{ study.exclusion_reason_hierarchy }} {{ study.exclusion_reason_text }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <nav aria-label="Second screening excluded pages" class="mt-3">
+    <ul class="pagination">
+      <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+        {% if page <= 1 %}
+          <span class="page-link">Previous</span>
+        {% else %}
+          <a class="page-link" href="{{ url_for('second_screening_excluded', review_id=review.id, page=page-1, per_page=per_page, sort=sort) }}">Previous</a>
+        {% endif %}
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">Page {{ page }} of {{ total_pages }}</span>
+      </li>
+      <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+        {% if page >= total_pages %}
+          <span class="page-link">Next</span>
+        {% else %}
+          <a class="page-link" href="{{ url_for('second_screening_excluded', review_id=review.id, page=page+1, per_page=per_page, sort=sort) }}">Next</a>
+        {% endif %}
+      </li>
+    </ul>
+  </nav>
+{% endif %}
+{% endblock %}
