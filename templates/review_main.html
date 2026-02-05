@@ -148,7 +148,7 @@
               <h5 class="card-title mb-0">First screening (Title & Abstract)</h5>
               <div class="d-flex flex-wrap gap-3 text-muted small">
                 <span>
-                  <a class="text-decoration-none" href="{{ url_for('first_screening_irrelevant', review_id=review.id) }}">
+                  <a class="text-decoration-none {{ 'text-danger fw-semibold' if first_irrelevant > 0 else 'text-muted' }}" href="{{ url_for('first_screening_irrelevant', review_id=review.id) }}">
                     Irrelevant studies: {{ first_irrelevant }}
                   </a>
                 </span>
@@ -198,7 +198,7 @@
               <h5 class="card-title mb-0">Second screening (Full-text)</h5>
               <div class="d-flex flex-wrap gap-3 text-muted small">
                 <span>
-                  <a class="text-decoration-none" href="{{ url_for('second_screening_excluded', review_id=review.id) }}">
+                  <a class="text-decoration-none {{ 'text-danger fw-semibold' if second_excluded > 0 else 'text-muted' }}" href="{{ url_for('second_screening_excluded', review_id=review.id) }}">
                     Excluded studies: {{ second_excluded }}
                   </a>
                 </span>

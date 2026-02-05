@@ -1612,7 +1612,19 @@ def create_app() -> Flask:
         if not review:
             abort(404)
 
-        rows = db.execute(
+        per_page, page, sort = parse_pagination_args()
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
+              AND first_screening_included = 'no';
+            """,
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
             """
             SELECT s.*,
                    er.hierarchy AS exclusion_reason_hierarchy,
@@ -1621,12 +1633,24 @@ def create_app() -> Flask:
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
             WHERE s.id_review = %s
               AND s.first_screening_included = 'no'
-            ORDER BY s.id ASC;
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
             """,
-            (review_id,),
+            (review_id, per_page, offset),
         ).fetchall()
 
-        return render_template("first_screening_irrelevant.html", review=review, rows=rows)
+        return render_template(
+            "first_screening_irrelevant.html",
+            review=review,
+            studies=studies,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
+        )
 
     @app.route("/<int:review_id>_second_screening_excluded.html")
     def second_screening_excluded(review_id: int):
@@ -1635,7 +1659,19 @@ def create_app() -> Flask:
         if not review:
             abort(404)
 
-        rows = db.execute(
+        per_page, page, sort = parse_pagination_args()
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
+              AND second_screening_included = 'no';
+            """,
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
             """
             SELECT s.*,
                    er.hierarchy AS exclusion_reason_hierarchy,
@@ -1644,12 +1680,24 @@ def create_app() -> Flask:
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
             WHERE s.id_review = %s
               AND s.second_screening_included = 'no'
-            ORDER BY s.id ASC;
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
             """,
-            (review_id,),
+            (review_id, per_page, offset),
         ).fetchall()
 
-        return render_template("second_screening_excluded.html", review=review, rows=rows)
+        return render_template(
+            "second_screening_excluded.html",
+            review=review,
+            studies=studies,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
+        )
 
     @app.route("/review/<int:review_id>/full_extraction.html")
     def full_extraction(review_id: int):
