@@ -97,19 +97,35 @@
               <input type="hidden" name="study_id" value="{{ study.id }}">
               <input type="hidden" name="show" value="{{ show }}">
 
-              <div class="mb-3">
-                <div class="fw-semibold mb-1">Notes</div>
-                {% if study.second_screening_notes %}
-                  <ul class="mb-0">
-                    {% for note in study.second_screening_notes.split(";$]") %}
-                      {% if note|trim %}
-                        <li>{{ note|trim }}</li>
-                      {% endif %}
-                    {% endfor %}
-                  </ul>
-                {% else %}
-                  <div class="text-muted small">No notes yet.</div>
-                {% endif %}
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <div class="fw-semibold mb-1">First screening notes</div>
+                  {% if study.first_screening_notes %}
+                    <ul class="mb-0">
+                      {% for note in study.first_screening_notes.split(";$]") %}
+                        {% if note|trim %}
+                          <li>{{ note|trim }}</li>
+                        {% endif %}
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="text-muted small">No notes yet.</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6">
+                  <div class="fw-semibold mb-1">Second screening notes</div>
+                  {% if study.second_screening_notes %}
+                    <ul class="mb-0">
+                      {% for note in study.second_screening_notes.split(";$]") %}
+                        {% if note|trim %}
+                          <li>{{ note|trim }}</li>
+                        {% endif %}
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="text-muted small">No notes yet.</div>
+                  {% endif %}
+                </div>
               </div>
               <div class="mb-3">
                 <label class="form-label">Notes (optional)</label>
