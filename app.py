@@ -1083,12 +1083,27 @@ def create_app() -> Flask:
             (review_id,),
         ).fetchall()
 
+        reviewer_conflicts_totals = db.execute(
+            """
+            SELECT
+                r.reviewer_name AS reviewer,
+                COUNT(DISTINCT c.id_study) AS n_conflicts
+            FROM first_screening_conflicts c
+            JOIN reviewers r ON r.id = c.id_reviewer
+            WHERE c.id_review = %s
+            GROUP BY r.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
+
         return render_template(
             "first_screening_conflicts.html",
             review=review,
             studies=studies,
             conflicts_map=conflicts_map,
             reviewer_conflicts_summary=reviewer_conflicts_summary,
+            reviewer_conflicts_totals=reviewer_conflicts_totals,
             reviewer_name=reviewer_name,
             page=page,
             per_page=per_page,
@@ -1593,12 +1608,27 @@ def create_app() -> Flask:
             (review_id,),
         ).fetchall()
 
+        reviewer_conflicts_totals = db.execute(
+            """
+            SELECT
+                r.reviewer_name AS reviewer,
+                COUNT(DISTINCT c.id_study) AS n_conflicts
+            FROM second_screening_conflicts c
+            JOIN reviewers r ON r.id = c.id_reviewer
+            WHERE c.id_review = %s
+            GROUP BY r.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
+
         return render_template(
             "second_screening_conflicts.html",
             review=review,
             studies=studies,
             conflicts_map=conflicts_map,
             reviewer_conflicts_summary=reviewer_conflicts_summary,
+            reviewer_conflicts_totals=reviewer_conflicts_totals,
             reviewer_name=reviewer_name,
             reasons=reasons,
             page=page,
