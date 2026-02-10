@@ -8,28 +8,58 @@
   <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
 </div>
 
-<div class="card shadow-sm mb-3">
-  <div class="card-body">
-    <div class="fw-semibold mb-2">Conflicts by reviewers</div>
-    {% if reviewer_conflicts_summary %}
-      <div class="table-responsive">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr><th>Reviewers</th><th>N conflicts</th></tr>
-          </thead>
-          <tbody>
-            {% for row in reviewer_conflicts_summary %}
-              <tr>
-                <td>{{ row.reviewer_a }} - {{ row.reviewer_b }}</td>
-                <td>{{ row.n_conflicts }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="fw-semibold mb-2">Conflicts between reviewers</div>
+        {% if reviewer_conflicts_summary %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr><th>Reviewers</th><th>N conflicts</th></tr>
+              </thead>
+              <tbody>
+                {% for row in reviewer_conflicts_summary %}
+                  <tr>
+                    <td>{{ row.reviewer_a }} - {{ row.reviewer_b }}</td>
+                    <td>{{ row.n_conflicts }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-muted small">No reviewer pair conflicts found.</div>
+        {% endif %}
       </div>
-    {% else %}
-      <div class="text-muted small">No reviewer pair conflicts found.</div>
-    {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="fw-semibold mb-2">Conflicts by reviewer</div>
+        {% if reviewer_conflicts_by_reviewer %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr><th>Reviewer</th><th>N conflicts</th></tr>
+              </thead>
+              <tbody>
+                {% for row in reviewer_conflicts_by_reviewer %}
+                  <tr>
+                    <td>{{ row.reviewer }}</td>
+                    <td>{{ row.n_conflicts }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-muted small">No reviewer conflicts found.</div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 
