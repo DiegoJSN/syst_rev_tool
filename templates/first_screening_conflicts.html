@@ -8,6 +8,31 @@
   <a class="btn btn-outline-secondary" href="{{ url_for('review_main', review_id=review.id) }}">Back to main</a>
 </div>
 
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <div class="fw-semibold mb-2">Conflicts by reviewers</div>
+    {% if reviewer_conflicts_summary %}
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr><th>Reviewers</th><th>N conflicts</th></tr>
+          </thead>
+          <tbody>
+            {% for row in reviewer_conflicts_summary %}
+              <tr>
+                <td>{{ row.reviewer_a }} - {{ row.reviewer_b }}</td>
+                <td>{{ row.n_conflicts }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-muted small">No reviewer pair conflicts found.</div>
+    {% endif %}
+  </div>
+</div>
+
 <form method="get" class="row g-2 align-items-end mb-3">
   <input type="hidden" name="page" value="1">
   <div class="col-auto">

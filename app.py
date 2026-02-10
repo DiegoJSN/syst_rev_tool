@@ -1062,11 +1062,35 @@ def create_app() -> Flask:
             ).fetchall()
             conflicts_map[s["id"]] = rows
 
+        reviewer_conflicts_summary = db.execute(
+            """
+            SELECT
+                r1.reviewer_name AS reviewer_a,
+                r2.reviewer_name AS reviewer_b,
+                COUNT(DISTINCT c1.id_study) AS n_conflicts
+            FROM first_screening_conflicts c1
+            JOIN first_screening_conflicts c2
+              ON c1.id_review = c2.id_review
+             AND c1.id_study = c2.id_study
+             AND c1.id_reviewer < c2.id_reviewer
+             AND c1.decision <> c2.decision
+            JOIN studies s ON s.id_review = c1.id_review AND s.id = c1.id_study
+            JOIN reviewers r1 ON r1.id = c1.id_reviewer
+            JOIN reviewers r2 ON r2.id = c2.id_reviewer
+            WHERE c1.id_review = %s
+              AND s.first_screening_included = 'conflict'
+            GROUP BY r1.reviewer_name, r2.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r1.reviewer_name), lower(r2.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
+
         return render_template(
             "first_screening_conflicts.html",
             review=review,
             studies=studies,
             conflicts_map=conflicts_map,
+            reviewer_conflicts_summary=reviewer_conflicts_summary,
             reviewer_name=reviewer_name,
             page=page,
             per_page=per_page,
@@ -1550,11 +1574,35 @@ def create_app() -> Flask:
             ).fetchall()
             conflicts_map[s["id"]] = rows
 
+        reviewer_conflicts_summary = db.execute(
+            """
+            SELECT
+                r1.reviewer_name AS reviewer_a,
+                r2.reviewer_name AS reviewer_b,
+                COUNT(DISTINCT c1.id_study) AS n_conflicts
+            FROM second_screening_conflicts c1
+            JOIN second_screening_conflicts c2
+              ON c1.id_review = c2.id_review
+             AND c1.id_study = c2.id_study
+             AND c1.id_reviewer < c2.id_reviewer
+             AND c1.decision <> c2.decision
+            JOIN studies s ON s.id_review = c1.id_review AND s.id = c1.id_study
+            JOIN reviewers r1 ON r1.id = c1.id_reviewer
+            JOIN reviewers r2 ON r2.id = c2.id_reviewer
+            WHERE c1.id_review = %s
+              AND s.second_screening_included = 'conflict'
+            GROUP BY r1.reviewer_name, r2.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r1.reviewer_name), lower(r2.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
+
         return render_template(
             "second_screening_conflicts.html",
             review=review,
             studies=studies,
             conflicts_map=conflicts_map,
+            reviewer_conflicts_summary=reviewer_conflicts_summary,
             reviewer_name=reviewer_name,
             reasons=reasons,
             page=page,
