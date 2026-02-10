@@ -1074,27 +1074,11 @@ def create_app() -> Flask:
              AND c1.id_study = c2.id_study
              AND c1.id_reviewer < c2.id_reviewer
              AND c1.decision <> c2.decision
-            JOIN studies s ON s.id_review = c1.id_review AND s.id = c1.id_study
             JOIN reviewers r1 ON r1.id = c1.id_reviewer
             JOIN reviewers r2 ON r2.id = c2.id_reviewer
             WHERE c1.id_review = %s
-              AND s.first_screening_included = 'conflict'
             GROUP BY r1.reviewer_name, r2.reviewer_name
             ORDER BY n_conflicts DESC, lower(r1.reviewer_name), lower(r2.reviewer_name);
-            """,
-            (review_id,),
-        ).fetchall()
-
-        reviewer_conflicts_by_reviewer = db.execute(
-            """
-            SELECT r.reviewer_name AS reviewer, COUNT(DISTINCT c.id_study) AS n_conflicts
-            FROM first_screening_conflicts c
-            JOIN reviewers r ON r.id = c.id_reviewer
-            JOIN studies s ON s.id_review = c.id_review AND s.id = c.id_study
-            WHERE c.id_review = %s
-              AND s.first_screening_included = 'conflict'
-            GROUP BY r.reviewer_name
-            ORDER BY n_conflicts DESC, lower(r.reviewer_name);
             """,
             (review_id,),
         ).fetchall()
@@ -1105,7 +1089,6 @@ def create_app() -> Flask:
             studies=studies,
             conflicts_map=conflicts_map,
             reviewer_conflicts_summary=reviewer_conflicts_summary,
-            reviewer_conflicts_by_reviewer=reviewer_conflicts_by_reviewer,
             reviewer_name=reviewer_name,
             page=page,
             per_page=per_page,
@@ -1601,27 +1584,11 @@ def create_app() -> Flask:
              AND c1.id_study = c2.id_study
              AND c1.id_reviewer < c2.id_reviewer
              AND c1.decision <> c2.decision
-            JOIN studies s ON s.id_review = c1.id_review AND s.id = c1.id_study
             JOIN reviewers r1 ON r1.id = c1.id_reviewer
             JOIN reviewers r2 ON r2.id = c2.id_reviewer
             WHERE c1.id_review = %s
-              AND s.second_screening_included = 'conflict'
             GROUP BY r1.reviewer_name, r2.reviewer_name
             ORDER BY n_conflicts DESC, lower(r1.reviewer_name), lower(r2.reviewer_name);
-            """,
-            (review_id,),
-        ).fetchall()
-
-        reviewer_conflicts_by_reviewer = db.execute(
-            """
-            SELECT r.reviewer_name AS reviewer, COUNT(DISTINCT c.id_study) AS n_conflicts
-            FROM second_screening_conflicts c
-            JOIN reviewers r ON r.id = c.id_reviewer
-            JOIN studies s ON s.id_review = c.id_review AND s.id = c.id_study
-            WHERE c.id_review = %s
-              AND s.second_screening_included = 'conflict'
-            GROUP BY r.reviewer_name
-            ORDER BY n_conflicts DESC, lower(r.reviewer_name);
             """,
             (review_id,),
         ).fetchall()
@@ -1632,7 +1599,6 @@ def create_app() -> Flask:
             studies=studies,
             conflicts_map=conflicts_map,
             reviewer_conflicts_summary=reviewer_conflicts_summary,
-            reviewer_conflicts_by_reviewer=reviewer_conflicts_by_reviewer,
             reviewer_name=reviewer_name,
             reasons=reasons,
             page=page,
