@@ -1160,6 +1160,18 @@ def create_app() -> Flask:
                     flash("Please provide hierarchy (integer) and reason.", "error")
                     return redirect(url_for("exclusion_reasons", review_id=review_id))
 
+                hierarchy_taken = db.execute(
+                    """
+                    SELECT 1 FROM exclusion_reasons
+                    WHERE id_review = %s AND hierarchy = %s AND is_active = 1
+                    LIMIT 1;
+                    """,
+                    (review_id, hierarchy_i),
+                ).fetchone()
+                if hierarchy_taken:
+                    flash("Two exclusion reasons cannot have the same hierarchy.", "error")
+                    return redirect(url_for("exclusion_reasons", review_id=review_id))
+
                 db.execute(
                     "INSERT INTO exclusion_reasons (id_review, hierarchy, reason) VALUES (%s, %s, %s);",
                     (review_id, hierarchy_i, reason),
