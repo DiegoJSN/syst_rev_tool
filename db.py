@@ -168,9 +168,20 @@ def init_db(app):
             hierarchy INTEGER NOT NULL,
             reason TEXT NOT NULL,
             is_active INTEGER NOT NULL DEFAULT 1,
-            UNIQUE(id_review, hierarchy),
             FOREIGN KEY (id_review) REFERENCES review(id) ON DELETE CASCADE
         );
+        """,
+        """
+        ALTER TABLE exclusion_reasons
+        DROP CONSTRAINT IF EXISTS exclusion_reasons_id_review_hierarchy_key;
+        """,
+        """
+        DROP INDEX IF EXISTS exclusion_reasons_id_review_hierarchy_key;
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_exclusion_reasons_active_hierarchy_unique
+        ON exclusion_reasons(id_review, hierarchy)
+        WHERE is_active = 1;
         """,
         """
         CREATE TABLE IF NOT EXISTS second_screening (
