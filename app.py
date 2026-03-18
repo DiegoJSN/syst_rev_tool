@@ -1,7 +1,12 @@
-\
+from dotenv import load_dotenv
+load_dotenv()  # carga .env automáticamente desde la carpeta actual. Asi te evitas escribir en la terminal lo de "DATABASE_URL=f"postgresql://review_user:[PASSWORD]@[IP]:5432/systrev_db"
+
 import os
 import csv
+import math
 import random
+import zipfile
+from io import BytesIO
 from typing import Optional, Tuple, List
 
 from flask import (
@@ -14,12 +19,13 @@ from openpyxl import Workbook
 # Web of Science .xls reader
 from python_calamine import CalamineWorkbook
 
-from db import init_db, get_db, close_db, db_path
+from db import init_db, get_db, close_db
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    app.config["DATABASE_URL"] = os.environ.get("DATABASE_URL")
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
     os.makedirs(app.instance_path, exist_ok=True)
@@ -27,11 +33,6 @@ def create_app() -> Flask:
 
     # Initialize DB if missing
     init_db(app)
-
-    @app.before_request
-    def _attach_db_path():
-        from flask import g
-        g._database_path = db_path(app)
 
     app.teardown_appcontext(close_db)
 
@@ -72,6 +73,47 @@ def create_app() -> Flask:
             base_existing = base_existing.rstrip() + suffix
         return f"{base_existing}{new_piece}{suffix}"
 
+    def parse_positive_int(value: Optional[str], default: int) -> int:
+        if value and value.isdigit():
+            parsed = int(value)
+            if parsed > 0:
+                return parsed
+        return default
+
+    def parse_show_value(value: Optional[str]) -> str:
+        if value in {"all", "with_pdf", "without_pdf"}:
+            return value
+        return "all"
+
+    def parse_pagination_args() -> Tuple[int, int, str]:
+        allowed_per_page = {25, 50, 100}
+        per_page = parse_positive_int(request.args.get("per_page"), 25)
+        if per_page not in allowed_per_page:
+            per_page = 25
+        page = parse_positive_int(request.args.get("page"), 1)
+        sort = request.args.get("sort", "random")
+        if sort not in {"random", "id", "authors", "title"}:
+            sort = "random"
+        return per_page, page, sort
+
+    def parse_show_arg() -> str:
+        return parse_show_value(request.args.get("show"))
+
+    def sort_clause(sort: str) -> str:
+        if sort == "id":
+            return "id ASC"
+        if sort == "authors":
+            return "CASE WHEN authors IS NULL OR authors = '' THEN 1 ELSE 0 END, lower(authors) ASC, id ASC"
+        if sort == "title":
+            return "CASE WHEN title IS NULL OR title = '' THEN 1 ELSE 0 END, lower(title) ASC, id ASC"
+        return "RANDOM()"
+
+    def clamp_page(page: int, total: int, per_page: int) -> Tuple[int, int]:
+        total_pages = max(1, math.ceil(total / per_page)) if total else 1
+        if page > total_pages:
+            page = total_pages
+        return page, total_pages
+
     def refresh_cached_metrics(review_id: int):
         db = get_db()
 
@@ -81,9 +123,9 @@ def create_app() -> Flask:
             UPDATE reviewers
             SET first_screening_contribution = (
                 SELECT COUNT(*) FROM first_screening fs
-                WHERE fs.id_review = ? AND fs.id_reviewer = reviewers.id
+                WHERE fs.id_review = %s AND fs.id_reviewer = reviewers.id
             )
-            WHERE id_review = ?;
+            WHERE id_review = %s;
             """,
             (review_id, review_id),
         )
@@ -92,21 +134,21 @@ def create_app() -> Flask:
             UPDATE reviewers
             SET second_screening_contribution = (
                 SELECT COUNT(*) FROM second_screening ss
-                WHERE ss.id_review = ? AND ss.id_reviewer = reviewers.id
+                WHERE ss.id_review = %s AND ss.id_reviewer = reviewers.id
             )
-            WHERE id_review = ?;
+            WHERE id_review = %s;
             """,
             (review_id, review_id),
         )
 
         total = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ?;",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s;",
             (review_id,),
         ).fetchone()["c"]
         resolved_first = db.execute(
             """
             SELECT COUNT(*) AS c FROM studies
-            WHERE id_review = ?
+            WHERE id_review = %s
               AND first_screening_included IS NOT NULL
               AND first_screening_included != 'conflict';
             """,
@@ -116,13 +158,13 @@ def create_app() -> Flask:
         first_progress = int((resolved_first * 100) / total) if total else 0
 
         second_total = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included = 'yes';",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND first_screening_included = 'yes';",
             (review_id,),
         ).fetchone()["c"]
         resolved_second = db.execute(
             """
             SELECT COUNT(*) AS c FROM studies
-            WHERE id_review = ?
+            WHERE id_review = %s
               AND first_screening_included = 'yes'
               AND second_screening_included IS NOT NULL
               AND second_screening_included != 'conflict';
@@ -133,7 +175,7 @@ def create_app() -> Flask:
         second_progress = int((resolved_second * 100) / second_total) if second_total else 0
 
         db.execute(
-            "UPDATE review SET first_screening_progress = ?, second_screening_progress = ? WHERE id = ?;",
+            "UPDATE review SET first_screening_progress = %s, second_screening_progress = %s WHERE id = %s;",
             (first_progress, second_progress, review_id),
         )
         db.commit()
@@ -141,7 +183,7 @@ def create_app() -> Flask:
     def require_login(review_id: int) -> Tuple[int, str]:
         login = session.get("login")
         if not login or login.get("review_id") != review_id:
-            raise PermissionError("Please select your name (double verification) in the main page.")
+            raise PermissionError("Please select your name (double verification) in the \"Log in as\" section")
         return int(login["reviewer_id"]), str(login["reviewer_name"])
 
     def split_participants(text: str) -> List[str]:
@@ -173,28 +215,49 @@ def create_app() -> Flask:
         path = os.path.join(upload_dir, fname)
         file_storage.save(path)
         return path
+
+    def review_studies_dir(review_id: int) -> str:
+        return os.path.join(app.root_path, "reviews", str(review_id), "studies")
+
+    def is_two_reviewer_consensus(review_id: int) -> bool:
+        db = get_db()
+        row = db.execute(
+            "SELECT two_reviewer_consensus FROM review WHERE id = %s;",
+            (review_id,),
+        ).fetchone()
+        if not row:
+            return True
+        return (row["two_reviewer_consensus"] or "yes") != "no"
+
     def pick_two_distinct_decisions_first(review_id: int, study_id: int):
         db = get_db()
         rows = db.execute(
             """
             SELECT fs.id_reviewer, fs.decision
             FROM first_screening fs
-            WHERE fs.id_review = ? AND fs.id_study = ?;
+            WHERE fs.id_review = %s AND fs.id_study = %s;
             """,
             (review_id, study_id),
         ).fetchall()
 
-        # Keep first decision per reviewer
-        uniq = {}
-        for r in rows:
-            rid = r["id_reviewer"]
-            if rid not in uniq:
-                uniq[rid] = r["decision"]
+        if is_two_reviewer_consensus(review_id):
+            # Keep first decision per reviewer
+            uniq = {}
+            for r in rows:
+                rid = r["id_reviewer"]
+                if rid not in uniq:
+                    uniq[rid] = r["decision"]
 
-        if len(uniq) < 2:
+            if len(uniq) < 2:
+                return None
+
+            reviewers = list(uniq.items())  # [(reviewer_id, decision)]
+            return random.sample(reviewers, 2)
+
+        if len(rows) < 2:
             return None
 
-        reviewers = list(uniq.items())  # [(reviewer_id, decision)]
+        reviewers = [(r["id_reviewer"], r["decision"]) for r in rows]
         return random.sample(reviewers, 2)
 
 
@@ -207,8 +270,9 @@ def create_app() -> Flask:
         for rid, dec in pair:
             db.execute(
                 """
-                INSERT OR IGNORE INTO first_screening_conflicts (id_review, id_reviewer, id_study, decision)
-                VALUES (?, ?, ?, ?);
+                INSERT INTO first_screening_conflicts (id_review, id_reviewer, id_study, decision)
+                VALUES (%s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING;
                 """,
                 (review_id, rid, study_id, dec),
             )
@@ -230,7 +294,7 @@ def create_app() -> Flask:
 
         if outcome:
             db.execute(
-                "UPDATE studies SET first_screening_included = ? WHERE id_review = ? AND id = ?;",
+                "UPDATE studies SET first_screening_included = %s WHERE id_review = %s AND id = %s;",
                 (outcome, review_id, study_id),
             )
         db.commit()
@@ -240,21 +304,28 @@ def create_app() -> Flask:
             """
             SELECT ss.id_reviewer, ss.decision, ss.reason
             FROM second_screening ss
-            WHERE ss.id_review = ? AND ss.id_study = ?;
+            WHERE ss.id_review = %s AND ss.id_study = %s;
             """,
             (review_id, study_id),
         ).fetchall()
 
-        uniq = {}
-        for r in rows:
-            rid = r["id_reviewer"]
-            if rid not in uniq:
-                uniq[rid] = (r["decision"], r["reason"])
+        if is_two_reviewer_consensus(review_id):
+            uniq = {}
+            for r in rows:
+                rid = r["id_reviewer"]
+                if rid not in uniq:
+                    uniq[rid] = (r["decision"], r["reason"])
 
-        if len(uniq) < 2:
+            if len(uniq) < 2:
+                return None
+
+            reviewers = list(uniq.items())  # [(reviewer_id, (decision, reason))]
+            return random.sample(reviewers, 2)
+
+        if len(rows) < 2:
             return None
 
-        reviewers = list(uniq.items())  # [(reviewer_id, (decision, reason))]
+        reviewers = [(r["id_reviewer"], (r["decision"], r["reason"])) for r in rows]
         return random.sample(reviewers, 2)
 
 
@@ -267,8 +338,9 @@ def create_app() -> Flask:
         for rid, (dec, reason) in pair:
             db.execute(
                 """
-                INSERT OR IGNORE INTO second_screening_conflicts (id_review, id_reviewer, id_study, decision, reason)
-                VALUES (?, ?, ?, ?, ?);
+                INSERT INTO second_screening_conflicts (id_review, id_reviewer, id_study, decision, reason)
+                VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING;
                 """,
                 (review_id, rid, study_id, dec, reason),
             )
@@ -288,7 +360,7 @@ def create_app() -> Flask:
                 outcome = "no"
                 candidates = [r for r in [r1, r2] if r is not None]
                 if candidates:
-                    q = ",".join("?" for _ in candidates)
+                    q = ",".join("%s" for _ in candidates)
                     rows = db.execute(
                         f"SELECT id, hierarchy FROM exclusion_reasons WHERE id IN ({q});",
                         tuple(candidates),
@@ -302,7 +374,7 @@ def create_app() -> Flask:
 
         if outcome:
             db.execute(
-                "UPDATE studies SET second_screening_included = ?, exclusion_reason = ? WHERE id_review = ? AND id = ?;",
+                "UPDATE studies SET second_screening_included = %s, exclusion_reason = %s WHERE id_review = %s AND id = %s;",
                 (outcome, exclusion_reason, review_id, study_id),
             )
         db.commit()
@@ -347,16 +419,16 @@ def create_app() -> Flask:
                     year_int = None
 
             try:
-                db.execute(
+                cur = db.execute(
                     """
-                    INSERT OR IGNORE INTO studies
+                    INSERT INTO studies
                     (id_review, document_type, doi, title, authors, year, abstract, source_title)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING;
                     """,
                     (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                 )
-                changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
-                if changes == 1:
+                if cur.rowcount == 1:
                     inserted += 1
                 else:
                     duplicates += 1
@@ -389,16 +461,16 @@ def create_app() -> Flask:
                         year_int = None
 
                 try:
-                    db.execute(
+                    cur = db.execute(
                         """
-                        INSERT OR IGNORE INTO studies
+                        INSERT INTO studies
                         (id_review, document_type, doi, title, authors, year, abstract, source_title)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING;
                         """,
                         (review_id, doc_type, doi, title, authors, year_int, abstract, source),
                     )
-                    changes = db.execute("SELECT changes() AS c;").fetchone()["c"]
-                    if changes == 1:
+                    if cur.rowcount == 1:
                         inserted += 1
                     else:
                         duplicates += 1
@@ -413,7 +485,7 @@ def create_app() -> Flask:
         cur = db.execute(
             """
             DELETE FROM studies
-            WHERE id_review = ?
+            WHERE id_review = %s
               AND document_type IS NULL
               AND doi IS NULL
               AND title IS NULL
@@ -446,8 +518,19 @@ def create_app() -> Flask:
             if request.form.get("action") == "create":
                 review_name = (request.form.get("review_name") or "").strip()
                 participants_raw = (request.form.get("participants") or "").strip()
+                two_reviewer_consensus = (request.form.get("two_reviewer_consensus") or "yes").strip().lower()
+                if two_reviewer_consensus not in {"yes", "no"}:
+                    two_reviewer_consensus = "yes"
+                delete_password = (request.form.get("delete_password") or "").strip()
+                delete_password_confirm = (request.form.get("delete_password_confirm") or "").strip()
                 if not review_name:
                     flash("Please provide a review name.", "error")
+                    return redirect(url_for("home"))
+                if not delete_password:
+                    flash("Please provide a delete password.", "error")
+                    return redirect(url_for("home"))
+                if delete_password != delete_password_confirm:
+                    flash("Delete passwords do not match.", "error")
                     return redirect(url_for("home"))
 
                 participants = split_participants(participants_raw)
@@ -456,16 +539,23 @@ def create_app() -> Flask:
 
                 cur = db.execute(
                     """
-                    INSERT INTO review (review_name, participants_number, participants_name)
-                    VALUES (?, ?, ?);
+                    INSERT INTO review (review_name, participants_number, participants_name, two_reviewer_consensus, password)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING id;
                     """,
-                    (review_name, participants_number, participants_name),
+                    (
+                        review_name,
+                        participants_number,
+                        participants_name,
+                        two_reviewer_consensus,
+                        delete_password,
+                    ),
                 )
-                review_id = cur.lastrowid
+                review_id = cur.fetchone()["id"]
 
                 for name in participants:
                     db.execute(
-                        "INSERT INTO reviewers (id_review, reviewer_name) VALUES (?, ?);",
+                        "INSERT INTO reviewers (id_review, reviewer_name) VALUES (%s, %s);",
                         (review_id, name),
                     )
                 db.commit()
@@ -473,13 +563,32 @@ def create_app() -> Flask:
                 flash(f"Review created (id: {review_id}).", "success")
                 return redirect(url_for("home"))
 
-        reviews = db.execute("SELECT * FROM review ORDER BY id DESC;").fetchall()
+        reviews = db.execute(
+            """
+            SELECT review.*,
+                   (
+                       SELECT COUNT(*) FROM studies
+                       WHERE id_review = review.id
+                         AND second_screening_included = 'yes'
+                   ) AS to_extract
+            FROM review
+            ORDER BY id DESC;
+            """
+        ).fetchall()
         return render_template("0_home.html", reviews=reviews)
 
     @app.route("/review/<int:review_id>/delete", methods=["POST"])
     def delete_review(review_id: int):
         db = get_db()
-        db.execute("DELETE FROM review WHERE id = ?;", (review_id,))
+        delete_password = (request.form.get("delete_password") or "").strip()
+        row = db.execute("SELECT password FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not row:
+            flash("Review not found.", "error")
+            return redirect(url_for("home"))
+        if delete_password != (row["password"] or ""):
+            flash("Incorrect delete password.", "error")
+            return redirect(url_for("home"))
+        db.execute("DELETE FROM review WHERE id = %s;", (review_id,))
         db.commit()
         if session.get("login", {}).get("review_id") == review_id:
             session.pop("login", None)
@@ -489,12 +598,12 @@ def create_app() -> Flask:
     @app.route("/<int:review_id>_main.html", methods=["GET", "POST"])
     def review_main(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
         reviewers = db.execute(
-            "SELECT * FROM reviewers WHERE id_review = ? ORDER BY reviewer_name COLLATE NOCASE;",
+            "SELECT * FROM reviewers WHERE id_review = %s ORDER BY lower(reviewer_name);",
             (review_id,),
         ).fetchall()
 
@@ -516,7 +625,7 @@ def create_app() -> Flask:
                     return redirect(url_for("review_main", review_id=review_id))
 
                 row = db.execute(
-                    "SELECT id, reviewer_name FROM reviewers WHERE id_review = ? AND reviewer_name = ?;",
+                    "SELECT id, reviewer_name FROM reviewers WHERE id_review = %s AND reviewer_name = %s;",
                     (review_id, name1),
                 ).fetchone()
                 if not row:
@@ -539,11 +648,36 @@ def create_app() -> Flask:
             if action == "change_title":
                 new_title = (request.form.get("new_title") or "").strip()
                 if not new_title:
-                    flash("Title cannot be empty.", "error")
+                    flash("New title cannot be empty.", "error")
                     return redirect(url_for("review_main", review_id=review_id))
-                db.execute("UPDATE review SET review_name = ? WHERE id = ?;", (new_title, review_id))
+                db.execute("UPDATE review SET review_name = %s WHERE id = %s;", (new_title, review_id))
                 db.commit()
                 flash("Title updated.", "success")
+                return redirect(url_for("review_main", review_id=review_id))
+
+            if action == "change_delete_password":
+                current_password = (request.form.get("current_delete_password") or "").strip()
+                new_password = (request.form.get("new_delete_password") or "").strip()
+                confirm_password = (request.form.get("confirm_delete_password") or "").strip()
+                if not current_password:
+                    flash("Current delete password is required.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                if not new_password:
+                    flash("New delete password is required.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                if new_password != confirm_password:
+                    flash("New delete passwords do not match.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                row = db.execute(
+                    "SELECT password FROM review WHERE id = %s;",
+                    (review_id,),
+                ).fetchone()
+                if not row or (row["password"] or "") != current_password:
+                    flash("Current delete password is incorrect.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+                db.execute("UPDATE review SET password = %s WHERE id = %s;", (new_password, review_id))
+                db.commit()
+                flash("Delete password updated.", "success")
                 return redirect(url_for("review_main", review_id=review_id))
 
             if action == "rename_reviewer":
@@ -555,7 +689,7 @@ def create_app() -> Flask:
 
                 try:
                     db.execute(
-                        "UPDATE reviewers SET reviewer_name = ? WHERE id = ? AND id_review = ?;",
+                        "UPDATE reviewers SET reviewer_name = %s WHERE id = %s AND id_review = %s;",
                         (new_name, reviewer_id, review_id),
                     )
                     db.commit()
@@ -566,12 +700,12 @@ def create_app() -> Flask:
 
                 # update review participants from reviewers
                 rows = db.execute(
-                    "SELECT reviewer_name FROM reviewers WHERE id_review = ? ORDER BY id;",
+                    "SELECT reviewer_name FROM reviewers WHERE id_review = %s ORDER BY id;",
                     (review_id,),
                 ).fetchall()
                 participants_name = "; ".join([r["reviewer_name"] for r in rows])
                 db.execute(
-                    "UPDATE review SET participants_name = ?, participants_number = ? WHERE id = ?;",
+                    "UPDATE review SET participants_name = %s, participants_number = %s WHERE id = %s;",
                     (participants_name, len(rows), review_id),
                 )
                 db.commit()
@@ -583,6 +717,37 @@ def create_app() -> Flask:
                     session["login"] = login
 
                 flash("Reviewer renamed.", "success")
+                return redirect(url_for("review_main", review_id=review_id))
+
+            if action == "add_reviewer":
+                new_name = (request.form.get("new_reviewer_name") or "").strip()
+                if not new_name:
+                    flash("Name cannot be empty.", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+
+                try:
+                    db.execute(
+                        "INSERT INTO reviewers (id_review, reviewer_name) VALUES (%s, %s);",
+                        (review_id, new_name),
+                    )
+                    db.commit()
+                except Exception:
+                    db.rollback()
+                    flash("Add participant failed (maybe duplicate name).", "error")
+                    return redirect(url_for("review_main", review_id=review_id))
+
+                rows = db.execute(
+                    "SELECT reviewer_name FROM reviewers WHERE id_review = %s ORDER BY id;",
+                    (review_id,),
+                ).fetchall()
+                participants_name = "; ".join([r["reviewer_name"] for r in rows])
+                db.execute(
+                    "UPDATE review SET participants_name = %s, participants_number = %s WHERE id = %s;",
+                    (participants_name, len(rows), review_id),
+                )
+                db.commit()
+
+                flash("Participant added.", "success")
                 return redirect(url_for("review_main", review_id=review_id))
 
             if action == "import_studies":
@@ -621,7 +786,7 @@ def create_app() -> Flask:
                 removed = duplicates + deleted
                 if removed:
                     db.execute(
-                        "UPDATE review SET duplicates_removed = duplicates_removed + ? WHERE id = ?;",
+                        "UPDATE review SET duplicates_removed = duplicates_removed + %s WHERE id = %s;",
                         (removed, review_id),
                     )
                     db.commit()
@@ -636,49 +801,49 @@ def create_app() -> Flask:
                 return redirect(url_for("review_main", review_id=review_id))
 
         refresh_cached_metrics(review_id)
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
 
-        total = db.execute("SELECT COUNT(*) AS c FROM studies WHERE id_review = ?;", (review_id,)).fetchone()["c"]
+        total = db.execute("SELECT COUNT(*) AS c FROM studies WHERE id_review = %s;", (review_id,)).fetchone()["c"]
 
         first_pending = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included IS NULL;",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND first_screening_included IS NULL;",
             (review_id,),
         ).fetchone()["c"]
         first_conflicts = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included = 'conflict';",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND first_screening_included = 'conflict';",
             (review_id,),
         ).fetchone()["c"]
         first_done = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included IN ('yes','no');",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND first_screening_included IN ('yes','no');",
             (review_id,),
         ).fetchone()["c"]
         first_irrelevant = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND first_screening_included = 'no';",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND first_screening_included = 'no';",
             (review_id,),
         ).fetchone()["c"]
 
         second_pending = db.execute(
             """
             SELECT COUNT(*) AS c FROM studies
-            WHERE id_review = ? AND first_screening_included='yes' AND second_screening_included IS NULL;
+            WHERE id_review = %s AND first_screening_included='yes' AND second_screening_included IS NULL;
             """,
             (review_id,),
         ).fetchone()["c"]
         second_conflicts = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included = 'conflict';",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND second_screening_included = 'conflict';",
             (review_id,),
         ).fetchone()["c"]
         second_done = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included IN ('yes','no');",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND second_screening_included IN ('yes','no');",
             (review_id,),
         ).fetchone()["c"]
         second_excluded = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included = 'no';",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND second_screening_included = 'no';",
             (review_id,),
         ).fetchone()["c"]
 
         to_extract = db.execute(
-            "SELECT COUNT(*) AS c FROM studies WHERE id_review = ? AND second_screening_included = 'yes';",
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND second_screening_included = 'yes';",
             (review_id,),
         ).fetchone()["c"]
 
@@ -710,7 +875,7 @@ def create_app() -> Flask:
     @app.route("/<int:review_id>_first_screening.html", methods=["GET", "POST"])
     def first_screening(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
@@ -719,6 +884,8 @@ def create_app() -> Flask:
         except PermissionError as e:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
+
+        per_page, page, sort = parse_pagination_args()
 
         if request.method == "POST":
             study_id = int(request.form.get("study_id"))
@@ -730,60 +897,96 @@ def create_app() -> Flask:
                 return redirect(url_for("first_screening", review_id=review_id))
 
             try:
-                db.execute(
+                existing = db.execute(
                     """
-                    INSERT INTO first_screening (id_review, id_reviewer, id_study, decision)
-                    VALUES (?, ?, ?, ?);
+                    SELECT COUNT(*) AS c
+                    FROM first_screening
+                    WHERE id_review = %s AND id_reviewer = %s AND id_study = %s;
                     """,
-                    (review_id, reviewer_id, study_id, decision_btn),
-                )
+                    (review_id, reviewer_id, study_id),
+                ).fetchone()["c"]
+                if existing:
+                    flash("You already screened this study.", "error")
+                    return redirect(url_for("first_screening", review_id=review_id))
+
+                entries = 2 if (review.get("two_reviewer_consensus") or "yes") == "no" else 1
+                for _ in range(entries):
+                    db.execute(
+                        """
+                        INSERT INTO first_screening (id_review, id_reviewer, id_study, decision)
+                        VALUES (%s, %s, %s, %s);
+                        """,
+                        (review_id, reviewer_id, study_id, decision_btn),
+                    )
                 db.commit()
             except Exception:
                 db.rollback()
-                flash("You already screened this study.", "error")
+                flash("Unable to save your screening decision.", "error")
                 return redirect(url_for("first_screening", review_id=review_id))
 
             row = db.execute(
-                "SELECT first_screening_notes FROM studies WHERE id_review = ? AND id = ?;",
+                "SELECT first_screening_notes FROM studies WHERE id_review = %s AND id = %s;",
                 (review_id, study_id),
             ).fetchone()
             new_notes = append_note(row["first_screening_notes"], reviewer_name, notes)
             db.execute(
-                "UPDATE studies SET first_screening_notes = ? WHERE id_review = ? AND id = ?;",
+                "UPDATE studies SET first_screening_notes = %s WHERE id_review = %s AND id = %s;",
                 (new_notes, review_id, study_id),
             )
             db.commit()
 
             consolidate_first(review_id, study_id)
             refresh_cached_metrics(review_id)
-            return redirect(url_for("first_screening", review_id=review_id))
+            return redirect(url_for("first_screening", review_id=review_id, page=page, per_page=per_page, sort=sort))
 
-        study = db.execute(
+        total = db.execute(
             """
-            SELECT * FROM studies
-            WHERE id_review = ?
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
               AND first_screening_included IS NULL
               AND id NOT IN (
                 SELECT id_study FROM first_screening
-                WHERE id_review = ? AND id_reviewer = ?
-              )
-            ORDER BY RANDOM()
-            LIMIT 1;
+                WHERE id_review = %s AND id_reviewer = %s
+              );
             """,
             (review_id, review_id, reviewer_id),
-        ).fetchone()
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
+            """
+            SELECT * FROM studies
+            WHERE id_review = %s
+              AND first_screening_included IS NULL
+              AND id NOT IN (
+                SELECT id_study FROM first_screening
+                WHERE id_review = %s AND id_reviewer = %s
+              )
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
+            """,
+            (review_id, review_id, reviewer_id, per_page, offset),
+        ).fetchall()
 
         return render_template(
             "first_screening.html",
             review=review,
-            study=study,
+            studies=studies,
             reviewer_name=reviewer_name,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_first_screening_conflicts.html", methods=["GET", "POST"])
     def first_screening_conflicts(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
@@ -792,6 +995,8 @@ def create_app() -> Flask:
         except PermissionError as e:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
+
+        per_page, page, sort = parse_pagination_args()
 
         if request.method == "POST":
             study_id = int(request.form.get("study_id"))
@@ -803,27 +1008,44 @@ def create_app() -> Flask:
                 return redirect(url_for("first_screening_conflicts", review_id=review_id))
 
             db.execute(
-                "UPDATE studies SET first_screening_included = ? WHERE id_review = ? AND id = ?;",
+                "UPDATE studies SET first_screening_included = %s WHERE id_review = %s AND id = %s;",
                 (final, review_id, study_id),
             )
 
             row = db.execute(
-                "SELECT first_screening_notes FROM studies WHERE id_review = ? AND id = ?;",
+                "SELECT first_screening_notes FROM studies WHERE id_review = %s AND id = %s;",
                 (review_id, study_id),
             ).fetchone()
             new_notes = append_note(row["first_screening_notes"], reviewer_name, notes)
             db.execute(
-                "UPDATE studies SET first_screening_notes = ? WHERE id_review = ? AND id = ?;",
+                "UPDATE studies SET first_screening_notes = %s WHERE id_review = %s AND id = %s;",
                 (new_notes, review_id, study_id),
             )
             db.commit()
 
             refresh_cached_metrics(review_id)
-            return redirect(url_for("first_screening_conflicts", review_id=review_id))
+            return redirect(
+                url_for(
+                    "first_screening_conflicts",
+                    review_id=review_id,
+                    page=page,
+                    per_page=per_page,
+                    sort=sort,
+                )
+            )
+
+        total = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND first_screening_included = 'conflict';",
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
 
         studies = db.execute(
-            "SELECT * FROM studies WHERE id_review = ? AND first_screening_included = 'conflict' ORDER BY id ASC;",
-            (review_id,),
+            "SELECT * FROM studies WHERE id_review = %s AND first_screening_included = 'conflict' ORDER BY "
+            + sort_clause(sort)
+            + " LIMIT %s OFFSET %s;",
+            (review_id, per_page, offset),
         ).fetchall()
 
         conflicts_map = {}
@@ -833,33 +1055,77 @@ def create_app() -> Flask:
                 SELECT r.reviewer_name, fsc.decision
                 FROM first_screening_conflicts fsc
                 JOIN reviewers r ON r.id = fsc.id_reviewer
-                WHERE fsc.id_review = ? AND fsc.id_study = ?
-                ORDER BY r.reviewer_name COLLATE NOCASE;
+                WHERE fsc.id_review = %s AND fsc.id_study = %s
+                ORDER BY lower(r.reviewer_name);
                 """,
                 (review_id, s["id"]),
             ).fetchall()
             conflicts_map[s["id"]] = rows
+
+        reviewer_conflicts_summary = db.execute(
+            """
+            SELECT
+                r1.reviewer_name AS reviewer_a,
+                r2.reviewer_name AS reviewer_b,
+                COUNT(DISTINCT c1.id_study) AS n_conflicts
+            FROM first_screening_conflicts c1
+            JOIN first_screening_conflicts c2
+              ON c1.id_review = c2.id_review
+             AND c1.id_study = c2.id_study
+             AND c1.id_reviewer < c2.id_reviewer
+             AND c1.decision <> c2.decision
+            JOIN studies s ON s.id_review = c1.id_review AND s.id = c1.id_study
+            JOIN reviewers r1 ON r1.id = c1.id_reviewer
+            JOIN reviewers r2 ON r2.id = c2.id_reviewer
+            WHERE c1.id_review = %s
+              AND s.first_screening_included = 'conflict'
+            GROUP BY r1.reviewer_name, r2.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r1.reviewer_name), lower(r2.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
+
+        reviewer_conflicts_by_reviewer = db.execute(
+            """
+            SELECT r.reviewer_name AS reviewer, COUNT(DISTINCT c.id_study) AS n_conflicts
+            FROM first_screening_conflicts c
+            JOIN reviewers r ON r.id = c.id_reviewer
+            JOIN studies s ON s.id_review = c.id_review AND s.id = c.id_study
+            WHERE c.id_review = %s
+              AND s.first_screening_included = 'conflict'
+            GROUP BY r.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
 
         return render_template(
             "first_screening_conflicts.html",
             review=review,
             studies=studies,
             conflicts_map=conflicts_map,
+            reviewer_conflicts_summary=reviewer_conflicts_summary,
+            reviewer_conflicts_by_reviewer=reviewer_conflicts_by_reviewer,
             reviewer_name=reviewer_name,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_first_screening_contributions.html")
     def first_screening_contributions(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
         reviewers = db.execute(
             """
             SELECT reviewer_name, first_screening_contribution AS c
-            FROM reviewers WHERE id_review = ?
-            ORDER BY c DESC, reviewer_name COLLATE NOCASE;
+            FROM reviewers WHERE id_review = %s
+            ORDER BY c DESC, lower(reviewer_name);
             """,
             (review_id,),
         ).fetchall()
@@ -870,7 +1136,7 @@ def create_app() -> Flask:
     @app.route("/<int:review_id>_exclusion_reasons.html", methods=["GET", "POST"])
     def exclusion_reasons(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
@@ -894,8 +1160,20 @@ def create_app() -> Flask:
                     flash("Please provide hierarchy (integer) and reason.", "error")
                     return redirect(url_for("exclusion_reasons", review_id=review_id))
 
+                hierarchy_taken = db.execute(
+                    """
+                    SELECT 1 FROM exclusion_reasons
+                    WHERE id_review = %s AND hierarchy = %s AND is_active = 1
+                    LIMIT 1;
+                    """,
+                    (review_id, hierarchy_i),
+                ).fetchone()
+                if hierarchy_taken:
+                    flash("Two exclusion reasons cannot have the same hierarchy.", "error")
+                    return redirect(url_for("exclusion_reasons", review_id=review_id))
+
                 db.execute(
-                    "INSERT INTO exclusion_reasons (id_review, hierarchy, reason) VALUES (?, ?, ?);",
+                    "INSERT INTO exclusion_reasons (id_review, hierarchy, reason) VALUES (%s, %s, %s);",
                     (review_id, hierarchy_i, reason),
                 )
                 db.commit()
@@ -905,7 +1183,7 @@ def create_app() -> Flask:
             if action == "delete":
                 rid = int(request.form.get("reason_id"))
                 db.execute(
-                    "UPDATE exclusion_reasons SET is_active = 0 WHERE id_review = ? AND id = ?;",
+                    "UPDATE exclusion_reasons SET is_active = 0 WHERE id_review = %s AND id = %s;",
                     (review_id, rid),
                 )
                 db.commit()
@@ -915,7 +1193,7 @@ def create_app() -> Flask:
         reasons = db.execute(
             """
             SELECT * FROM exclusion_reasons
-            WHERE id_review = ? AND is_active = 1
+            WHERE id_review = %s AND is_active = 1
             ORDER BY hierarchy ASC, id ASC;
             """,
             (review_id,),
@@ -923,10 +1201,162 @@ def create_app() -> Flask:
 
         return render_template("exclusion_reasons.html", review=review, reasons=reasons)
 
+    @app.route("/review/<int:review_id>/studies/<int:study_id>/full_text", methods=["GET"])
+    def read_full_text(review_id: int, study_id: int):
+        db = get_db()
+        review = db.execute("SELECT id FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        try:
+            require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        row = db.execute(
+            "SELECT file_name, file_data FROM studies WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        ).fetchone()
+        if not row or not row["file_name"]:
+            abort(404)
+
+        if row.get("file_data"):
+            return send_file(
+                BytesIO(row["file_data"]),
+                mimetype="application/pdf",
+                as_attachment=False,
+                download_name=row["file_name"],
+            )
+
+        path = os.path.join(review_studies_dir(review_id), row["file_name"])
+        if not os.path.exists(path):
+            abort(404)
+
+        return send_file(path, as_attachment=False, download_name=row["file_name"])
+
+    @app.route("/review/<int:review_id>/studies/<int:study_id>/full_text/upload", methods=["POST"])
+    def upload_full_text(review_id: int, study_id: int):
+        db = get_db()
+        review = db.execute("SELECT id FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        try:
+            require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        study = db.execute(
+            "SELECT id FROM studies WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        ).fetchone()
+        if not study:
+            abort(404)
+
+        per_page = parse_positive_int(request.form.get("per_page"), 25)
+        if per_page not in {25, 50, 100}:
+            per_page = 25
+        page = parse_positive_int(request.form.get("page"), 1)
+        sort = request.form.get("sort", "random")
+        if sort not in {"random", "id", "authors", "title"}:
+            sort = "random"
+        show = parse_show_value(request.form.get("show"))
+        return_to = request.form.get("return_to", "second_screening")
+        if return_to not in {"second_screening", "full_extraction", "second_screening_conflicts"}:
+            return_to = "second_screening"
+
+        upload = request.files.get("full_text")
+        if not upload or not upload.filename:
+            flash("Please select a PDF to upload.", "error")
+            return redirect(
+                url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort, show=show)
+            )
+
+        if not upload.filename.lower().endswith(".pdf"):
+            flash("Only PDF files are allowed.", "error")
+            return redirect(
+                url_for(return_to, review_id=review_id, page=page, per_page=per_page, sort=sort, show=show)
+            )
+
+        file_name = safe_filename(upload.filename or f"{review_id}_{study_id}.pdf")
+        upload_bytes = upload.read()
+
+        db.execute(
+            "UPDATE studies SET file_name = %s, file_data = %s WHERE id_review = %s AND id = %s;",
+            (file_name, upload_bytes, review_id, study_id),
+        )
+        db.commit()
+
+        redirect_url = url_for(
+            return_to,
+            review_id=review_id,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            show=show,
+        )
+        return redirect(f"{redirect_url}#study-{study_id}")
+
+    @app.route("/review/<int:review_id>/studies/<int:study_id>/full_text/delete", methods=["POST"])
+    def delete_full_text(review_id: int, study_id: int):
+        db = get_db()
+        review = db.execute("SELECT id FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        try:
+            require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        study = db.execute(
+            "SELECT file_name, file_data FROM studies WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        ).fetchone()
+        if not study:
+            abort(404)
+
+        per_page = parse_positive_int(request.form.get("per_page"), 25)
+        if per_page not in {25, 50, 100}:
+            per_page = 25
+        page = parse_positive_int(request.form.get("page"), 1)
+        sort = request.form.get("sort", "random")
+        if sort not in {"random", "id", "authors", "title"}:
+            sort = "random"
+        show = parse_show_value(request.form.get("show"))
+        return_to = request.form.get("return_to", "second_screening")
+        if return_to not in {"second_screening", "full_extraction", "second_screening_conflicts"}:
+            return_to = "second_screening"
+
+        if study.get("file_name") and not study.get("file_data"):
+            path = os.path.join(review_studies_dir(review_id), study["file_name"])
+            if os.path.exists(path):
+                os.remove(path)
+
+        db.execute(
+            "UPDATE studies SET file_name = NULL, file_data = NULL WHERE id_review = %s AND id = %s;",
+            (review_id, study_id),
+        )
+        db.commit()
+        flash("Full-text PDF removed.", "success")
+
+        redirect_url = url_for(
+            return_to,
+            review_id=review_id,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            show=show,
+        )
+        return redirect(f"{redirect_url}#study-{study_id}")
+
     @app.route("/<int:review_id>_second_screening.html", methods=["GET", "POST"])
     def second_screening(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
@@ -936,10 +1366,18 @@ def create_app() -> Flask:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
 
+        per_page, page, sort = parse_pagination_args()
+        show = parse_show_arg()
+        show_clause = ""
+        if show == "with_pdf":
+            show_clause = "AND file_name IS NOT NULL AND file_name <> ''"
+        elif show == "without_pdf":
+            show_clause = "AND (file_name IS NULL OR file_name = '')"
+
         reasons = db.execute(
             """
             SELECT id, hierarchy, reason FROM exclusion_reasons
-            WHERE id_review = ? AND is_active = 1
+            WHERE id_review = %s AND is_active = 1
             ORDER BY hierarchy ASC, id ASC;
             """,
             (review_id,),
@@ -949,6 +1387,7 @@ def create_app() -> Flask:
             study_id = int(request.form.get("study_id"))
             action = request.form.get("action")
             notes = request.form.get("notes") or ""
+            show = parse_show_value(request.form.get("show"))
 
             if action == "include":
                 decision = "yes"
@@ -958,69 +1397,115 @@ def create_app() -> Flask:
                 reason_id = request.form.get("reason_id")
                 if not reason_id:
                     flash("Please select an exclusion reason.", "error")
-                    return redirect(url_for("second_screening", review_id=review_id))
+                    return redirect(url_for("second_screening", review_id=review_id, show=show))
                 reason_id = int(reason_id)
             else:
                 flash("Invalid action.", "error")
-                return redirect(url_for("second_screening", review_id=review_id))
+                return redirect(url_for("second_screening", review_id=review_id, show=show))
 
             try:
-                db.execute(
+                existing = db.execute(
                     """
-                    INSERT INTO second_screening (id_review, id_reviewer, id_study, decision, reason)
-                    VALUES (?, ?, ?, ?, ?);
+                    SELECT COUNT(*) AS c
+                    FROM second_screening
+                    WHERE id_review = %s AND id_reviewer = %s AND id_study = %s;
                     """,
-                    (review_id, reviewer_id, study_id, decision, reason_id),
-                )
+                    (review_id, reviewer_id, study_id),
+                ).fetchone()["c"]
+                if existing:
+                    flash("You already screened this study in second screening.", "error")
+                    return redirect(url_for("second_screening", review_id=review_id, show=show))
+
+                entries = 2 if (review.get("two_reviewer_consensus") or "yes") == "no" else 1
+                for _ in range(entries):
+                    db.execute(
+                        """
+                        INSERT INTO second_screening (id_review, id_reviewer, id_study, decision, reason)
+                        VALUES (%s, %s, %s, %s, %s);
+                        """,
+                        (review_id, reviewer_id, study_id, decision, reason_id),
+                    )
                 db.commit()
             except Exception:
                 db.rollback()
-                flash("You already screened this study in second screening.", "error")
-                return redirect(url_for("second_screening", review_id=review_id))
+                flash("Unable to save your screening decision.", "error")
+                return redirect(url_for("second_screening", review_id=review_id, show=show))
 
             row = db.execute(
-                "SELECT second_screening_notes FROM studies WHERE id_review = ? AND id = ?;",
+                "SELECT second_screening_notes FROM studies WHERE id_review = %s AND id = %s;",
                 (review_id, study_id),
             ).fetchone()
             new_notes = append_note(row["second_screening_notes"], reviewer_name, notes)
             db.execute(
-                "UPDATE studies SET second_screening_notes = ? WHERE id_review = ? AND id = ?;",
+                "UPDATE studies SET second_screening_notes = %s WHERE id_review = %s AND id = %s;",
                 (new_notes, review_id, study_id),
             )
             db.commit()
 
             consolidate_second(review_id, study_id)
             refresh_cached_metrics(review_id)
-            return redirect(url_for("second_screening", review_id=review_id))
+            return redirect(
+                url_for("second_screening", review_id=review_id, page=page, per_page=per_page, sort=sort, show=show)
+            )
 
-        study = db.execute(
+        total = db.execute(
             """
-            SELECT * FROM studies
-            WHERE id_review = ?
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
               AND first_screening_included = 'yes'
               AND second_screening_included IS NULL
               AND id NOT IN (
                 SELECT id_study FROM second_screening
-                WHERE id_review = ? AND id_reviewer = ?
+                WHERE id_review = %s AND id_reviewer = %s
               )
-            ORDER BY RANDOM()
-            LIMIT 1;
+            """
+            + show_clause
+            + """;
             """,
             (review_id, review_id, reviewer_id),
-        ).fetchone()
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
+            """
+            SELECT * FROM studies
+            WHERE id_review = %s
+              AND first_screening_included = 'yes'
+              AND second_screening_included IS NULL
+              AND id NOT IN (
+                SELECT id_study FROM second_screening
+                WHERE id_review = %s AND id_reviewer = %s
+              )
+            """
+            + show_clause
+            + """
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
+            """,
+            (review_id, review_id, reviewer_id, per_page, offset),
+        ).fetchall()
 
         return render_template(
             "second_screening.html",
             review=review,
-            study=study,
+            studies=studies,
             reviewer_name=reviewer_name,
             reasons=reasons,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            show=show,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_second_screening_conflicts.html", methods=["GET", "POST"])
     def second_screening_conflicts(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
@@ -1030,10 +1515,12 @@ def create_app() -> Flask:
             flash(str(e), "error")
             return redirect(url_for("review_main", review_id=review_id))
 
+        per_page, page, sort = parse_pagination_args()
+
         reasons = db.execute(
             """
             SELECT id, hierarchy, reason FROM exclusion_reasons
-            WHERE id_review = ? AND is_active = 1
+            WHERE id_review = %s AND is_active = 1
             ORDER BY hierarchy ASC, id ASC;
             """,
             (review_id,),
@@ -1046,7 +1533,7 @@ def create_app() -> Flask:
 
             if final == "include":
                 db.execute(
-                    "UPDATE studies SET second_screening_included = 'yes', exclusion_reason = NULL WHERE id_review = ? AND id = ?;",
+                    "UPDATE studies SET second_screening_included = 'yes', exclusion_reason = NULL WHERE id_review = %s AND id = %s;",
                     (review_id, study_id),
                 )
             elif final == "exclude":
@@ -1056,7 +1543,7 @@ def create_app() -> Flask:
                     return redirect(url_for("second_screening_conflicts", review_id=review_id))
                 reason_id = int(reason_id)
                 db.execute(
-                    "UPDATE studies SET second_screening_included = 'no', exclusion_reason = ? WHERE id_review = ? AND id = ?;",
+                    "UPDATE studies SET second_screening_included = 'no', exclusion_reason = %s WHERE id_review = %s AND id = %s;",
                     (reason_id, review_id, study_id),
                 )
             else:
@@ -1064,22 +1551,39 @@ def create_app() -> Flask:
                 return redirect(url_for("second_screening_conflicts", review_id=review_id))
 
             row = db.execute(
-                "SELECT second_screening_notes FROM studies WHERE id_review = ? AND id = ?;",
+                "SELECT second_screening_notes FROM studies WHERE id_review = %s AND id = %s;",
                 (review_id, study_id),
             ).fetchone()
             new_notes = append_note(row["second_screening_notes"], reviewer_name, notes)
             db.execute(
-                "UPDATE studies SET second_screening_notes = ? WHERE id_review = ? AND id = ?;",
+                "UPDATE studies SET second_screening_notes = %s WHERE id_review = %s AND id = %s;",
                 (new_notes, review_id, study_id),
             )
             db.commit()
 
             refresh_cached_metrics(review_id)
-            return redirect(url_for("second_screening_conflicts", review_id=review_id))
+            return redirect(
+                url_for(
+                    "second_screening_conflicts",
+                    review_id=review_id,
+                    page=page,
+                    per_page=per_page,
+                    sort=sort,
+                )
+            )
+
+        total = db.execute(
+            "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s AND second_screening_included = 'conflict';",
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
 
         studies = db.execute(
-            "SELECT * FROM studies WHERE id_review = ? AND second_screening_included = 'conflict' ORDER BY id ASC;",
-            (review_id,),
+            "SELECT * FROM studies WHERE id_review = %s AND second_screening_included = 'conflict' ORDER BY "
+            + sort_clause(sort)
+            + " LIMIT %s OFFSET %s;",
+            (review_id, per_page, offset),
         ).fetchall()
 
         conflicts_map = {}
@@ -1090,34 +1594,78 @@ def create_app() -> Flask:
                 FROM second_screening_conflicts ssc
                 JOIN reviewers r ON r.id = ssc.id_reviewer
                 LEFT JOIN exclusion_reasons er ON er.id = ssc.reason
-                WHERE ssc.id_review = ? AND ssc.id_study = ?
-                ORDER BY r.reviewer_name COLLATE NOCASE;
+                WHERE ssc.id_review = %s AND ssc.id_study = %s
+                ORDER BY lower(r.reviewer_name);
                 """,
                 (review_id, s["id"]),
             ).fetchall()
             conflicts_map[s["id"]] = rows
+
+        reviewer_conflicts_summary = db.execute(
+            """
+            SELECT
+                r1.reviewer_name AS reviewer_a,
+                r2.reviewer_name AS reviewer_b,
+                COUNT(DISTINCT c1.id_study) AS n_conflicts
+            FROM second_screening_conflicts c1
+            JOIN second_screening_conflicts c2
+              ON c1.id_review = c2.id_review
+             AND c1.id_study = c2.id_study
+             AND c1.id_reviewer < c2.id_reviewer
+             AND c1.decision <> c2.decision
+            JOIN studies s ON s.id_review = c1.id_review AND s.id = c1.id_study
+            JOIN reviewers r1 ON r1.id = c1.id_reviewer
+            JOIN reviewers r2 ON r2.id = c2.id_reviewer
+            WHERE c1.id_review = %s
+              AND s.second_screening_included = 'conflict'
+            GROUP BY r1.reviewer_name, r2.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r1.reviewer_name), lower(r2.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
+
+        reviewer_conflicts_by_reviewer = db.execute(
+            """
+            SELECT r.reviewer_name AS reviewer, COUNT(DISTINCT c.id_study) AS n_conflicts
+            FROM second_screening_conflicts c
+            JOIN reviewers r ON r.id = c.id_reviewer
+            JOIN studies s ON s.id_review = c.id_review AND s.id = c.id_study
+            WHERE c.id_review = %s
+              AND s.second_screening_included = 'conflict'
+            GROUP BY r.reviewer_name
+            ORDER BY n_conflicts DESC, lower(r.reviewer_name);
+            """,
+            (review_id,),
+        ).fetchall()
 
         return render_template(
             "second_screening_conflicts.html",
             review=review,
             studies=studies,
             conflicts_map=conflicts_map,
+            reviewer_conflicts_summary=reviewer_conflicts_summary,
+            reviewer_conflicts_by_reviewer=reviewer_conflicts_by_reviewer,
             reviewer_name=reviewer_name,
             reasons=reasons,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
         )
 
     @app.route("/<int:review_id>_second_screening_contributions.html")
     def second_screening_contributions(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
         reviewers = db.execute(
             """
             SELECT reviewer_name, second_screening_contribution AS c
-            FROM reviewers WHERE id_review = ?
-            ORDER BY c DESC, reviewer_name COLLATE NOCASE;
+            FROM reviewers WHERE id_review = %s
+            ORDER BY c DESC, lower(reviewer_name);
             """,
             (review_id,),
         ).fetchall()
@@ -1128,7 +1676,7 @@ def create_app() -> Flask:
     @app.route("/<int:review_id>_list_of_studies.html")
     def list_of_studies(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
@@ -1139,7 +1687,7 @@ def create_app() -> Flask:
                    er.reason AS exclusion_reason_text
             FROM studies s
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
-            WHERE s.id_review = ?
+            WHERE s.id_review = %s
             ORDER BY s.id ASC;
             """,
             (review_id,),
@@ -1147,10 +1695,166 @@ def create_app() -> Flask:
 
         return render_template("list_of_studies.html", review=review, rows=rows)
 
+    @app.route("/<int:review_id>_first_screening_irrelevant.html")
+    def first_screening_irrelevant(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        per_page, page, sort = parse_pagination_args()
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
+              AND first_screening_included = 'no';
+            """,
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
+            """
+            SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
+                   er.reason AS exclusion_reason_text
+            FROM studies s
+            LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
+            WHERE s.id_review = %s
+              AND s.first_screening_included = 'no'
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
+            """,
+            (review_id, per_page, offset),
+        ).fetchall()
+
+        return render_template(
+            "first_screening_irrelevant.html",
+            review=review,
+            studies=studies,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
+        )
+
+    @app.route("/<int:review_id>_second_screening_excluded.html")
+    def second_screening_excluded(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        per_page, page, sort = parse_pagination_args()
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s
+              AND second_screening_included = 'no';
+            """,
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
+            """
+            SELECT s.*,
+                   er.hierarchy AS exclusion_reason_hierarchy,
+                   er.reason AS exclusion_reason_text
+            FROM studies s
+            LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
+            WHERE s.id_review = %s
+              AND s.second_screening_included = 'no'
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
+            """,
+            (review_id, per_page, offset),
+        ).fetchall()
+
+        return render_template(
+            "second_screening_excluded.html",
+            review=review,
+            studies=studies,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            total=total,
+            total_pages=total_pages,
+        )
+
+    @app.route("/review/<int:review_id>/full_extraction.html")
+    def full_extraction(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        try:
+            _, reviewer_name = require_login(review_id)
+        except PermissionError as e:
+            flash(str(e), "error")
+            return redirect(url_for("review_main", review_id=review_id))
+
+        per_page, page, sort = parse_pagination_args()
+        show = parse_show_arg()
+        show_clause = ""
+        if show == "with_pdf":
+            show_clause = "AND file_name IS NOT NULL AND file_name <> ''"
+        elif show == "without_pdf":
+            show_clause = "AND (file_name IS NULL OR file_name = '')"
+
+        total = db.execute(
+            """
+            SELECT COUNT(*) AS c FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            """
+            + show_clause
+            + """;
+            """,
+            (review_id,),
+        ).fetchone()["c"]
+        page, total_pages = clamp_page(page, total, per_page)
+        offset = (page - 1) * per_page
+
+        studies = db.execute(
+            """
+            SELECT * FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            """
+            + show_clause
+            + """
+            ORDER BY """
+            + sort_clause(sort)
+            + """
+            LIMIT %s OFFSET %s;
+            """,
+            (review_id, per_page, offset),
+        ).fetchall()
+
+        return render_template(
+            "full_extraction.html",
+            review=review,
+            studies=studies,
+            reviewer_name=reviewer_name,
+            page=page,
+            per_page=per_page,
+            sort=sort,
+            show=show,
+            total=total,
+            total_pages=total_pages,
+        )
+
     @app.route("/review/<int:review_id>/export_studies.xlsx")
     def export_studies_xlsx(review_id: int):
         db = get_db()
-        review = db.execute("SELECT * FROM review WHERE id = ?;", (review_id,)).fetchone()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
         if not review:
             abort(404)
 
@@ -1161,7 +1865,7 @@ def create_app() -> Flask:
                    er.reason AS exclusion_reason_text
             FROM studies s
             LEFT JOIN exclusion_reasons er ON er.id = s.exclusion_reason
-            WHERE s.id_review = ?
+            WHERE s.id_review = %s
             ORDER BY s.id ASC;
             """,
             (review_id,),
@@ -1202,6 +1906,98 @@ def create_app() -> Flask:
         out_path = os.path.join(app.instance_path, f"review_{review_id}_studies.xlsx")
         wb.save(out_path)
         return send_file(out_path, as_attachment=True, download_name=f"review_{review_id}_studies.xlsx")
+
+    @app.route("/review/<int:review_id>/export_second_screening.xlsx")
+    def export_second_screening_xlsx(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        rows = db.execute(
+            """
+            SELECT id, doi, title, authors, year, abstract, source_title,
+                   first_screening_notes, second_screening_notes
+            FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            ORDER BY id ASC;
+            """,
+            (review_id,),
+        ).fetchall()
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Second screening yes"
+
+        headers = [
+            "Study ID", "DOI", "Title", "Authors", "Year", "Abstract", "Source",
+            "1st notes", "2nd notes",
+        ]
+        ws.append(headers)
+
+        for r in rows:
+            ws.append([
+                r["id"],
+                r["doi"] or "",
+                r["title"] or "",
+                r["authors"] or "",
+                r["year"] or "",
+                r["abstract"] or "",
+                r["source_title"] or "",
+                r["first_screening_notes"] or "",
+                r["second_screening_notes"] or "",
+            ])
+
+        out_path = os.path.join(app.instance_path, f"review_{review_id}_second_screening.xlsx")
+        wb.save(out_path)
+        return send_file(
+            out_path,
+            as_attachment=True,
+            download_name=f"review_{review_id}_second_screening.xlsx",
+        )
+
+    @app.route("/review/<int:review_id>/export_second_screening_pdfs.zip")
+    def export_second_screening_pdfs(review_id: int):
+        db = get_db()
+        review = db.execute("SELECT * FROM review WHERE id = %s;", (review_id,)).fetchone()
+        if not review:
+            abort(404)
+
+        rows = db.execute(
+            """
+            SELECT id, file_name, file_data
+            FROM studies
+            WHERE id_review = %s AND second_screening_included = 'yes'
+            ORDER BY id ASC;
+            """,
+            (review_id,),
+        ).fetchall()
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+            for r in rows:
+                study_id = r["id"]
+                filename = f"study_id_{study_id}.pdf"
+                if r.get("file_data"):
+                    zipf.writestr(filename, r["file_data"])
+                    continue
+
+                if not r["file_name"]:
+                    continue
+
+                path = os.path.join(review_studies_dir(review_id), r["file_name"])
+                if not os.path.exists(path):
+                    continue
+                with open(path, "rb") as handle:
+                    zipf.writestr(filename, handle.read())
+
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=f"review_{review_id}_second_screening_pdfs.zip",
+        )
 
     return app
 

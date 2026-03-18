@@ -1,20 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
-  <div>
+<div class="row g-3 align-items-start mb-3">
+  <div class="col-lg-4">
     <h3 class="mb-1">{{ review.review_name }}</h3>
-  </div>
-  <div class="text-end">
-    {% if logged %}
-      <div class="small text-muted">Logged in as</div>
-      <div class="fw-semibold">{{ logged.reviewer_name }}</div>
-      <form method="post" class="mt-2">
-        <input type="hidden" name="action" value="logout">
-        <button class="btn btn-sm btn-outline-secondary">Log out</button>
-      </form>
-    {% else %}
-      <div class="small text-muted">Not logged in</div>
-    {% endif %}
   </div>
 </div>
 
@@ -22,34 +10,51 @@
   <div class="col-lg-4">
     <div class="card shadow-sm mb-4">
       <div class="card-body">
-        <h5 class="card-title">Change review title</h5>
-        <form method="post">
-          <input type="hidden" name="action" value="change_title">
-          <div class="input-group">
-            <input class="form-control" name="new_title" value="{{ review.review_name }}">
-            <button class="btn btn-primary">Save</button>
-          </div>
-        </form>
+        <h5 class="card-title">Change</h5>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#changeReviewTitleModal">
+            Review title
+          </button>
+          <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#changeDeletePasswordModal">
+            Delete password
+          </button>
+        </div>
       </div>
     </div>
-
     <div class="card shadow-sm mb-4">
       <div class="card-body">
         <h5 class="card-title">Participants</h5>
         <div class="small text-muted mb-2">{{ review.participants_number }} participants</div>
-        <div class="small">{{ review.participants_name }}</div>
         <hr>
         <div class="small text-muted mb-2">Edit participant names</div>
-        {% for rv in reviewers %}
-          <form method="post" class="mb-2">
-            <input type="hidden" name="action" value="rename_reviewer">
-            <input type="hidden" name="reviewer_id" value="{{ rv.id }}">
+        <div class="d-grid gap-2">
+          {% for rv in reviewers %}
+            <button
+              type="button"
+              class="card text-start border-0 shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#renameParticipantModal"
+              data-reviewer-id="{{ rv.id }}"
+              data-reviewer-name="{{ rv.reviewer_name }}"
+            >
+              <div class="card-body py-2">
+                <div class="fw-semibold">{{ rv.reviewer_name }}</div>
+              </div>
+            </button>
+          {% endfor %}
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-sm btn-outline-secondary" type="button" id="toggle-new-participant">
+            Add participant
+          </button>
+          <form method="post" class="mt-2 d-none" id="new-participant-form">
+            <input type="hidden" name="action" value="add_reviewer">
             <div class="input-group input-group-sm">
-              <input class="form-control" name="new_name" value="{{ rv.reviewer_name }}">
-              <button class="btn btn-outline-primary">Rename</button>
+              <input class="form-control" name="new_reviewer_name" placeholder="Participant name" required>
+              <button class="btn btn-outline-success">Add</button>
             </div>
           </form>
-        {% endfor %}
+        </div>
       </div>
     </div>
 
@@ -76,10 +81,10 @@
   <div class="col-lg-8">
     <div class="row g-4">
       <div class="col-12">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm {{ 'bg-success-subtle' if logged else 'bg-warning-subtle' }}">
           <div class="card-body">
             <h5 class="card-title">Log in as</h5>
-            <form method="post">
+            <form method="post" id="login-form">
               <input type="hidden" name="action" value="login">
               <div class="row g-2">
                 <div class="col-md-6">
@@ -99,9 +104,23 @@
                   </select>
                 </div>
               </div>
-              <button class="btn btn-success mt-3">Log in</button>
-              <div class="form-text mt-2">Double verification required.</div>
             </form>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <button class="btn btn-success" form="login-form">Log in</button>
+              <div class="text-end">
+                {% if logged %}
+                  <div class="small text-muted">Logged in as</div>
+                  <div class="fw-semibold">{{ logged.reviewer_name }}</div>
+                  <form method="post" class="mt-2">
+                    <input type="hidden" name="action" value="logout">
+                    <button class="btn btn-sm btn-outline-secondary">Log out</button>
+                  </form>
+                {% else %}
+                  <div class="small text-muted">Not logged in</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="form-text mt-2">Double verification required.</div>
           </div>
         </div>
       </div>
@@ -128,7 +147,11 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
               <h5 class="card-title mb-0">First screening (Title & Abstract)</h5>
               <div class="d-flex flex-wrap gap-3 text-muted small">
-                <span>Irrelevant studies: {{ first_irrelevant }}</span>
+                <span>
+                  <a class="text-decoration-none {{ 'text-danger fw-semibold' if first_irrelevant > 0 else 'text-muted' }}" href="{{ url_for('first_screening_irrelevant', review_id=review.id) }}">
+                    Irrelevant studies: {{ first_irrelevant }}
+                  </a>
+                </span>
                 <span>Progress: {{ review.first_screening_progress }}%</span>
               </div>
             </div>
@@ -174,7 +197,11 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
               <h5 class="card-title mb-0">Second screening (Full-text)</h5>
               <div class="d-flex flex-wrap gap-3 text-muted small">
-                <span>Excluded studies: {{ second_excluded }}</span>
+                <span>
+                  <a class="text-decoration-none {{ 'text-danger fw-semibold' if second_excluded > 0 else 'text-muted' }}" href="{{ url_for('second_screening_excluded', review_id=review.id) }}">
+                    Excluded studies: {{ second_excluded }}
+                  </a>
+                </span>
                 <span>Progress: {{ review.second_screening_progress }}%</span>
               </div>
             </div>
@@ -232,6 +259,15 @@
               </div>
             </div>
 
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <a class="btn btn-primary" href="{{ url_for('full_extraction', review_id=review.id) }}">See studies</a>
+              <a class="btn btn-success" href="{{ url_for('export_second_screening_xlsx', review_id=review.id) }}">
+                Export to .xlsx
+              </a>
+              <a class="btn btn-danger" href="{{ url_for('export_second_screening_pdfs', review_id=review.id) }}">
+                Export PDFs
+              </a>
+
             <div class="form-text mt-2"> </div>
           </div>
         </div>
@@ -240,4 +276,126 @@
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="changeDeletePasswordModal" tabindex="-1" aria-labelledby="changeDeletePasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="changeDeletePasswordModalLabel">Change delete password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="action" value="change_delete_password">
+          <div class="mb-3">
+            <label class="form-label" for="currentDeletePassword">Current password</label>
+            <input class="form-control" id="currentDeletePassword" name="current_delete_password" type="password" autocomplete="current-password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="newDeletePassword">New password</label>
+            <input class="form-control" id="newDeletePassword" name="new_delete_password" type="password" autocomplete="new-password" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="confirmDeletePassword">Confirm new password</label>
+            <input class="form-control" id="confirmDeletePassword" name="confirm_delete_password" type="password" autocomplete="new-password" required>
+            <div class="form-text">Enter the new password twice to confirm.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Change</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="renameParticipantModal" tabindex="-1" aria-labelledby="renameParticipantModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="renameParticipantModalLabel">Rename participant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="action" value="rename_reviewer">
+          <input type="hidden" name="reviewer_id" id="renameParticipantId">
+          <div class="mb-3">
+            <label class="form-label" for="renameParticipantInput">New name</label>
+            <input class="form-control" id="renameParticipantInput" name="new_name" type="text" autocomplete="off" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Rename</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="changeReviewTitleModal" tabindex="-1" aria-labelledby="changeReviewTitleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="changeReviewTitleModalLabel">Change review title</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="action" value="change_title">
+          <div class="mb-3">
+            <label class="form-label" for="newReviewTitle">New title</label>
+            <input class="form-control" id="newReviewTitle" name="new_title" type="text" autocomplete="off" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Change</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    const toggleButton = document.getElementById("toggle-new-participant");
+    const newParticipantForm = document.getElementById("new-participant-form");
+    const renameModal = document.getElementById("renameParticipantModal");
+
+    if (toggleButton && newParticipantForm) {
+      toggleButton.addEventListener("click", () => {
+        newParticipantForm.classList.toggle("d-none");
+        if (!newParticipantForm.classList.contains("d-none")) {
+          const input = newParticipantForm.querySelector("input[name='new_reviewer_name']");
+          if (input) {
+            input.focus();
+          }
+        }
+      });
+    }
+
+    if (renameModal) {
+      renameModal.addEventListener("show.bs.modal", (event) => {
+        const trigger = event.relatedTarget;
+        if (!trigger) {
+          return;
+        }
+        const reviewerId = trigger.getAttribute("data-reviewer-id");
+        const reviewerName = trigger.getAttribute("data-reviewer-name");
+        const idInput = renameModal.querySelector("#renameParticipantId");
+        const nameInput = renameModal.querySelector("#renameParticipantInput");
+        if (idInput) {
+          idInput.value = reviewerId || "";
+        }
+        if (nameInput) {
+          nameInput.value = reviewerName || "";
+          nameInput.focus();
+        }
+      });
+    }
+  </script>
 {% endblock %}
