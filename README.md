@@ -123,10 +123,11 @@ To stop the demo, return to the terminal and press **Ctrl+C**. Docker removes th
 Choose this option if you use Windows and do not want to install Python, Git or Docker.
 
 1. Open the [latest release](https://github.com/DiegoJSN/syst_rev_tool/releases/latest).
-2. Under **Assets**, download `SystRevTool-Demo.exe`.
-3. Double-click the downloaded file.
-4. Keep the black application window open. The demo opens automatically in your default browser.
-5. When finished, close the black window or press **Ctrl+C** inside it.
+2. Under **Assets**, download `SystRevTool-Demo-Windows.zip`.
+3. Right-click the ZIP, select **Extract all**, and open the extracted folder.
+4. Double-click `SystRevTool-Demo.exe`. Keep the other files beside it.
+5. Keep the black application window open. The demo opens automatically in your default browser.
+6. When finished, close the black window or press **Ctrl+C** inside it.
 
 The executable:
 
@@ -136,7 +137,9 @@ The executable:
 - opens the correct page in the browser;
 - stores no permanent research data.
 
-Windows may display a Microsoft Defender SmartScreen message because this portfolio executable is not commercially code-signed. If the file was downloaded from this repository's official Releases page, select **More info → Run anyway**. Do not run copies obtained from other sources.
+The application is distributed as a transparent portable folder instead of a self-extracting one-file package. This avoids the temporary extraction behaviour that commonly triggers antivirus heuristics. A SHA-256 checksum is published beside every ZIP so the download can be verified.
+
+The executable is not digitally signed. Windows may still show an **unknown publisher** reputation warning for a new download; that is different from a malware detection. Never disable Microsoft Defender. Do not run a file that Defender identifies as malware—download a newly built release from this repository instead.
 
 #### Build the executable yourself
 
@@ -148,7 +151,7 @@ cd syst_rev_tool
 powershell -ExecutionPolicy Bypass -File .\build_executable.ps1
 ```
 
-The resulting file is created at `dist\SystRevTool-Demo.exe`. GitHub also contains a Windows workflow that builds and smoke-tests the same executable.
+The resulting portable folder is created at `dist\SystRevTool-Demo`. GitHub also contains a Windows workflow that builds, launches and health-checks the same package before publishing its ZIP and checksum.
 
 ## Deploy on Render
 
