@@ -1,48 +1,36 @@
 # Systematic Review Tool
 
-> **Portfolio / Demo Version** — the `demo` branch is prepared specifically as a safe, low-friction portfolio showcase.
+> **Portfolio / Demo Version** — esta rama `demo` está preparada para mostrar el proyecto de forma rápida, segura y con datos ficticios.
 
-A collaborative web application for managing the study-selection stages of a systematic review. It replaces scattered spreadsheets with one workflow for importing references, independent screening, conflict resolution, full-text review and export.
+## Descripción
 
-## What you can try
+Aplicación web colaborativa para gestionar la selección de estudios de una revisión sistemática. Permite importar referencias de Web of Science o Scopus, revisar títulos y resúmenes, comparar decisiones entre revisores, resolver conflictos, registrar motivos de exclusión y exportar resultados a Excel.
 
-- Open the preloaded fictional review, **Urban green spaces and wellbeing**.
-- Select **Alex Morgan** in both “Log in as” fields.
-- Screen pending titles and abstracts.
-- Inspect and resolve reviewer conflicts.
-- Define hierarchical exclusion reasons.
-- Explore progress and reviewer-contribution dashboards.
-- Import the included Web of Science or Scopus samples.
-- Export study lists and final decisions to Excel.
+La rama **`demo`** utiliza una base de datos local con contenido de ejemplo para que cualquiera pueda probar el flujo sin cuentas ni credenciales.
 
-> Screenshot: add the final public-demo screenshot at `docs/demo-overview.png` after deployment.
+El proyecto completo de la rama **`main`** se despliega como aplicación web con **PostgreSQL** y utiliza **Tailscale** para conectar de forma privada distintos equipos, permitiendo que varias personas trabajen juntas sobre la misma revisión.
 
-## Recommended experience: online demo
+## Cómo probar la demo
 
-The repository is deployment-ready for Render. Once the service has been created, place its URL here:
+No necesitas PostgreSQL, Tailscale, contraseñas ni claves de API. Elige solo una opción:
 
-**Live demo:** _deployment URL pending_
+### 1. Ejecutable para Windows — recomendado
 
-Free Render services can take about a minute to wake after a period of inactivity. Demo data is fictional and the free deployment uses disposable storage, so it may reset when the service restarts.
+La forma más sencilla: no requiere instalar Python, Git ni Docker.
 
-## Run the demo on your computer
+1. Abre la [última versión publicada](https://github.com/DiegoJSN/syst_rev_tool/releases/latest).
+2. En **Assets**, descarga `SystRevTool-Demo-Windows.zip`.
+3. Haz clic derecho sobre el ZIP y selecciona **Extraer todo**.
+4. Abre la carpeta extraída y ejecuta `SystRevTool-Demo.exe`.
+5. Mantén abierta la ventana negra mientras utilizas la demo. El navegador se abrirá automáticamente.
 
-You only need to follow **one** of the three options below:
+Para terminar, cierra la ventana negra. No ejecutes versiones antiguas que Microsoft Defender haya identificado como malware; descarga siempre la versión más reciente desde este repositorio.
 
-- **Option 1 — Python:** recommended if Python is already installed.
-- **Option 2 — Docker:** recommended if Docker Desktop is already installed.
-- **Option 3 — Windows executable:** easiest option; no technical software is required.
+### 2. Con Python
 
-You do not need PostgreSQL, Tailscale, passwords or an `.env` file.
+Requiere [Git](https://git-scm.com/downloads) y [Python 3.11 o superior](https://www.python.org/downloads/).
 
-### Option 1 — Run with Python
-
-#### Windows
-
-1. Install [Git for Windows](https://git-scm.com/download/win).
-2. Install [Python 3.13](https://www.python.org/downloads/). On the first installer screen, select **Add python.exe to PATH**, then choose **Install Now**.
-3. Open the Start menu, type **PowerShell**, and open **Windows PowerShell**.
-4. Copy the entire block below, paste it into PowerShell, and press Enter:
+**Windows — PowerShell:**
 
 ```powershell
 git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
@@ -50,16 +38,7 @@ cd syst_rev_tool
 powershell -ExecutionPolicy Bypass -File .\run_demo.ps1
 ```
 
-The first run downloads the required packages and may take a few minutes. Keep the PowerShell window open while using the demo.
-
-5. When the terminal shows `Running on http://127.0.0.1:5000`, click or copy this address into Chrome, Edge or Firefox: <http://127.0.0.1:5000>.
-6. To stop the application, return to PowerShell and press **Ctrl+C**.
-
-#### macOS
-
-1. Install [Python 3.13](https://www.python.org/downloads/macos/).
-2. Open **Terminal** from Applications → Utilities.
-3. Copy the entire block below, paste it into Terminal, and press Return:
+**macOS o Linux — Terminal:**
 
 ```bash
 git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
@@ -67,157 +46,47 @@ cd syst_rev_tool
 sh ./run_demo.sh
 ```
 
-4. Wait until the terminal shows `Running on http://127.0.0.1:5000`, then open <http://127.0.0.1:5000>.
-5. Keep Terminal open. Press **Control+C** there when you want to stop the demo.
+Cuando aparezca la dirección local, abre <http://127.0.0.1:5000>. Para detener la aplicación, vuelve a la terminal y pulsa **Ctrl+C**.
 
-If Terminal says `git: command not found`, run `xcode-select --install`, finish the installation, and repeat step 3.
+### 3. Con Docker Desktop
 
-#### Linux
+Requiere [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
-Install Git, Python 3 and the Python virtual-environment package using your distribution's software manager. For Ubuntu or Debian:
-
-```bash
-sudo apt update
-sudo apt install -y git python3 python3-venv
-git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
-cd syst_rev_tool
-sh ./run_demo.sh
-```
-
-When the terminal shows the local address, open <http://127.0.0.1:5000>. Press **Ctrl+C** to stop the demo.
-
-### Option 2 — Run with Docker Desktop
-
-Docker packages the application and its dependencies together. You do not need to install Python separately.
-
-1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows, macOS or Linux.
-2. Open Docker Desktop and wait until it reports that Docker is running.
-3. Download this repository:
-   - Open the [`demo` branch on GitHub](https://github.com/DiegoJSN/syst_rev_tool/tree/demo).
-   - Select **Code → Download ZIP**.
-   - Extract the downloaded ZIP.
-4. Open a terminal inside the extracted folder:
-   - **Windows:** open the folder in File Explorer, right-click an empty area and select **Open in Terminal**.
-   - **macOS:** open Terminal, type `cd ` including the final space, drag the extracted folder into Terminal, and press Return.
-5. Copy and run these commands one at a time:
+1. Descarga la rama [`demo`](https://github.com/DiegoJSN/syst_rev_tool/tree/demo) mediante **Code → Download ZIP** y extrae el archivo.
+2. Abre una terminal dentro de la carpeta extraída.
+3. Ejecuta:
 
 ```bash
 docker build -t syst-rev-demo .
 docker run --rm -p 5000:5000 syst-rev-demo
 ```
 
-The first command may take several minutes. When the second command is running, open <http://127.0.0.1:5000>.
+Abre <http://127.0.0.1:5000>. Para detener la demo, pulsa **Ctrl+C**.
 
-To stop the demo, return to the terminal and press **Ctrl+C**. Docker removes the temporary container automatically; the downloaded project folder remains untouched.
+## Qué puedes probar
 
-### Common problems
+- Revisar títulos y resúmenes con distintos revisores.
+- Consultar y resolver conflictos.
+- Crear motivos de exclusión.
+- Ver el progreso y la contribución de cada revisor.
+- Importar los ejemplos incluidos de Web of Science y Scopus.
+- Exportar decisiones y listados a Excel.
+- Restaurar los datos iniciales con el botón **Reset demo**.
 
-- **“python”, “python3” or “git” is not recognized:** close and reopen the terminal after installation. On Windows, reinstall Python and select **Add python.exe to PATH**.
-- **Docker says it cannot connect to the daemon:** open Docker Desktop and wait until it has finished starting.
-- **Port 5000 is already in use:** stop the other application using that port. With Docker, you can instead run `docker run --rm -p 8080:5000 syst-rev-demo` and open <http://127.0.0.1:8080>.
-- **The page does not open:** confirm the terminal is still open and that the application has not displayed an error.
-- **You want a clean starting point:** use the **Reset demo** button in the blue banner.
+## Tecnología y funcionamiento
 
-### Option 3 — Windows executable (easiest)
+- **Python + Flask:** lógica del servidor, rutas y flujo de revisión.
+- **Jinja2, Bootstrap y DataTables:** interfaz web renderizada en el navegador.
+- **PostgreSQL + Psycopg:** almacenamiento centralizado de la versión completa y colaborativa.
+- **Tailscale:** conexión privada entre los equipos que acceden al despliegue completo.
+- **SQLite:** base de datos local sin configuración utilizada por esta demo.
+- **OpenPyXL y Python Calamine:** importación y exportación de hojas de cálculo.
+- **Docker y Gunicorn:** empaquetado y ejecución reproducible de la aplicación.
 
-Choose this option if you use Windows and do not want to install Python, Git or Docker.
+## Limitaciones de la demo
 
-1. Open the [latest release](https://github.com/DiegoJSN/syst_rev_tool/releases/latest).
-2. Under **Assets**, download `SystRevTool-Demo-Windows.zip`.
-3. Right-click the ZIP, select **Extract all**, and open the extracted folder.
-4. Double-click `SystRevTool-Demo.exe`. Keep the other files beside it.
-5. Keep the black application window open. The demo opens automatically in your default browser.
-6. When finished, close the black window or press **Ctrl+C** inside it.
+Los datos son ficticios, el acceso de revisores no es autenticación segura y el almacenamiento local no está pensado para investigación real o información sensible. Esta rama conserva el flujo principal del proyecto, pero sustituye la infraestructura privada de PostgreSQL y Tailscale por SQLite para facilitar la prueba.
 
-The executable:
+---
 
-- includes Python and all required packages;
-- creates fictional demo data automatically;
-- finds another local port if port 5000 is busy;
-- opens the correct page in the browser;
-- stores no permanent research data.
-
-The application is distributed as a transparent portable folder instead of a self-extracting one-file package. This avoids the temporary extraction behaviour that commonly triggers antivirus heuristics. A SHA-256 checksum is published beside every ZIP so the download can be verified.
-
-The executable is not digitally signed. Windows may still show an **unknown publisher** reputation warning for a new download; that is different from a malware detection. Never disable Microsoft Defender. Do not run a file that Defender identifies as malware—download a newly built release from this repository instead.
-
-#### Build the executable yourself
-
-If you have Python installed and want to reproduce the build:
-
-```powershell
-git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
-cd syst_rev_tool
-powershell -ExecutionPolicy Bypass -File .\build_executable.ps1
-```
-
-The resulting portable folder is created at `dist\SystRevTool-Demo`. GitHub also contains a Windows workflow that builds, launches and health-checks the same package before publishing its ZIP and checksum.
-
-## Deploy on Render
-
-1. Create a Render account and choose **New → Blueprint**.
-2. Connect this GitHub repository and select the `demo` branch.
-3. Render detects `render.yaml`; confirm the free service.
-4. Copy the resulting URL into the “Live demo” section above and into your CV.
-
-The blueprint generates the session secret. No personal keys or database credentials are committed.
-
-## Technology
-
-- Python and Flask
-- Jinja2 templates, Bootstrap and DataTables
-- SQLite for the zero-configuration demo
-- PostgreSQL via Psycopg for the original collaborative deployment
-- OpenPyXL and Python Calamine for spreadsheet import/export
-- Gunicorn and Docker for deployment
-
-## Project structure
-
-```text
-app.py                    Flask routes and review workflow
-db.py                     SQLite/PostgreSQL access, schema and demo fixtures
-templates/                Server-rendered interface
-static/                   CSS and browser-side behaviour
-example_studies_list/     Sample WoS and Scopus imports
-tests/                    Demo smoke tests
-Dockerfile                Reproducible production image
-render.yaml               One-click Render blueprint
-```
-
-## Configuration
-
-The demo defaults to:
-
-```text
-DEMO_MODE=true
-DATABASE_URL=sqlite:///instance/demo.db
-```
-
-For a durable multi-user installation, copy `.env.example`, set `DEMO_MODE=false`, provide a PostgreSQL `DATABASE_URL`, and set a strong random `SECRET_KEY`.
-
-## Verification
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-The smoke tests cover the health endpoint, seeded home page, review dashboard, review creation and Excel export.
-
-## Demo limitations
-
-- Data is fictional and intended only to demonstrate the workflow.
-- The **Reset demo** control restores the original fixture after experimentation.
-- The free hosted filesystem is disposable; it is not a production datastore.
-- Reviewer selection is workflow identification, not secure authentication.
-- The demo is not intended for sensitive, personal or unpublished research data.
-- The browser UI loads Bootstrap and DataTables from public CDNs.
-- Included sample PDFs are not required by the demo and should be reviewed for redistribution rights before a public release.
-
-## Differences from the original project
-
-The original deployment expected a manually configured PostgreSQL server exposed to reviewers through Tailscale. This branch adds a seeded SQLite mode, portable launch scripts, health checks, Docker/Render deployment and portfolio-focused documentation while retaining PostgreSQL support and the original review workflow.
-
-## Portfolio note
-
-This branch is deliberately optimized as a **Portfolio / Demo Version**. The production-style architecture, dual database support, reference-import pipeline, consensus workflow, exports and containerized deployment are the most relevant technical points to highlight in a CV or interview.
-
+La rama `demo` ha sido preparada específicamente como **versión demostrativa para portfolio**. El desarrollo completo se mantiene en la rama `main`.
