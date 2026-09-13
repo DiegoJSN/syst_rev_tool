@@ -5,9 +5,7 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
-import psycopg
 from flask import current_app, g
-from psycopg.rows import dict_row
 
 DATABASE_URL_ENV = "DATABASE_URL"
 
@@ -54,9 +52,16 @@ def get_db():
         g.db = (
             SQLiteConnection(_sqlite_path(dsn, current_app.root_path))
             if dsn.startswith("sqlite:///")
-            else psycopg.connect(dsn, row_factory=dict_row)
+            else _connect_postgres(dsn)
         )
     return g.db
+
+
+def _connect_postgres(dsn: str):
+    import psycopg
+    from psycopg.rows import dict_row
+
+    return psycopg.connect(dsn, row_factory=dict_row)
 
 
 def close_db(e: Optional[BaseException] = None):
@@ -148,6 +153,8 @@ def init_db(app):
         connection.executescript(SQLITE_SCHEMA)
         connection.close()
     elif dsn:
+        import psycopg
+
         with psycopg.connect(dsn) as connection:
             for statement in POSTGRES_SCHEMA.split(";"):
                 if statement.strip():
