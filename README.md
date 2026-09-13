@@ -1,288 +1,124 @@
-# SERVER SETUP: Instructions for the server admin
+# Systematic Review Tool
 
-Server setup guide (PostgreSQL + Tailscale + Python app)
+> **Portfolio / Demo Version** — the `demo` branch is prepared specifically as a safe, low-friction portfolio showcase.
 
-## Quick start
+A collaborative web application for managing the study-selection stages of a systematic review. It replaces scattered spreadsheets with one workflow for importing references, independent screening, conflict resolution, full-text review and export.
 
-This guide is for the **server machine** that will host:
-- The **PostgreSQL database** (on port 5432)
-- The **Python web app** (runs on port 5000 locally)
-- **Tailscale Serve**, so reviewers can access the app in their browser over Tailscale
+## What you can try
 
-## Before you start (important)
-- Use a machine that can stay **powered on** and **connected to the internet**.
-- Disable sleep/hibernation on the server (otherwise the app becomes unreachable).
-  - Windows: Settings → System → Power & battery → Screen and sleep → set to **Never**.
-- Have **admin rights** on the server.
+- Open the preloaded fictional review, **Urban green spaces and wellbeing**.
+- Select **Alex Morgan** in both “Log in as” fields.
+- Screen pending titles and abstracts.
+- Inspect and resolve reviewer conflicts.
+- Define hierarchical exclusion reasons.
+- Explore progress and reviewer-contribution dashboards.
+- Import the included Web of Science or Scopus samples.
+- Export study lists and final decisions to Excel.
 
----
+> Screenshot: add the final public-demo screenshot at `docs/demo-overview.png` after deployment.
 
-## 1) Install PostgreSQL and create the database
+## Recommended experience: online demo
 
-1. Download and install PostgreSQL
-    - [https://www.postgresql.org/download/](https://www.postgresql.org/download/)
-    
-2. During installation, note these settings:
-    - Port: **5432**
-    - Set a strong password for the ``postgres`` superuser (you will need this later)
-    - Install pgAdmin 4 (usually selected by default)
+The repository is deployment-ready for Render. Once the service has been created, place its URL here:
 
----
+**Live demo:** _deployment URL pending_
 
-## 2) Create the database user + database
->**Note: If you are restoring an existing database, edit and run ``server_restore.bat`` first and then jump to the next step "3) Allow PostgreSQL connections from your Tailscale network"**
+Free Render services can take about a minute to wake after a period of inactivity. Demo data is fictional and the free deployment uses disposable storage, so it may reset when the service restarts.
 
-After the installation, create:
-- A dedicated database user (for example: `review_user`)
-- A database owned by that user (for example: `systrev_db`)
+## Run locally
 
-Two different options for doing this:
+### Windows
 
-### Option A: Using the terminal (`psql`)
-1. Open a terminal and connect as the `postgres` superuser:
+Requirements: Git and Python 3.11–3.13.
+
+```powershell
+git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
+cd syst_rev_tool
+powershell -ExecutionPolicy Bypass -File .\run_demo.ps1
+```
+
+Open <http://127.0.0.1:5000>. No PostgreSQL, Tailscale, credentials or environment-file setup is required.
+
+### macOS / Linux
+
 ```bash
-psql -h localhost -p 5432 -U postgres -d postgres
+git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
+cd syst_rev_tool
+sh ./run_demo.sh
 ```
 
-2. It will ask for a pasword: enter the password you set during installation.
+### Docker
 
-3. Create the user (edit username/password):
-
-```sql
-CREATE USER review_user WITH PASSWORD 'your_strong_password_here';
+```bash
+docker build -t syst-rev-demo .
+docker run --rm -p 5000:5000 syst-rev-demo
 ```
 
-4. Create the database and set the owner:
+Then open <http://127.0.0.1:5000>.
 
-```sql
-CREATE DATABASE systrev_db OWNER review_user;
+## Deploy on Render
+
+1. Create a Render account and choose **New → Blueprint**.
+2. Connect this GitHub repository and select the `demo` branch.
+3. Render detects `render.yaml`; confirm the free service.
+4. Copy the resulting URL into the “Live demo” section above and into your CV.
+
+The blueprint generates the session secret. No personal keys or database credentials are committed.
+
+## Technology
+
+- Python and Flask
+- Jinja2 templates, Bootstrap and DataTables
+- SQLite for the zero-configuration demo
+- PostgreSQL via Psycopg for the original collaborative deployment
+- OpenPyXL and Python Calamine for spreadsheet import/export
+- Gunicorn and Docker for deployment
+
+## Project structure
+
+```text
+app.py                    Flask routes and review workflow
+db.py                     SQLite/PostgreSQL access, schema and demo fixtures
+templates/                Server-rendered interface
+static/                   CSS and browser-side behaviour
+example_studies_list/     Sample WoS and Scopus imports
+tests/                    Demo smoke tests
+Dockerfile                Reproducible production image
+render.yaml               One-click Render blueprint
 ```
 
-5. Exit psql
-```sql
-\q
+## Configuration
+
+The demo defaults to:
+
+```text
+DEMO_MODE=true
+DATABASE_URL=sqlite:///instance/demo.db
 ```
 
-### Option B: Using pgAdmin (GUI)
-1. Open **pgAdmin 4** and connect to your local server
-2. Open **Query Tool** in pgAdmin and run (edit values):
-```sql
-CREATE USER review_user WITH PASSWORD 'your_strong_password_here';
-CREATE DATABASE systrev_db OWNER review_user;
+For a durable multi-user installation, copy `.env.example`, set `DEMO_MODE=false`, provide a PostgreSQL `DATABASE_URL`, and set a strong random `SECRET_KEY`.
+
+## Verification
+
+```bash
+python -m unittest discover -s tests -v
 ```
 
+The smoke tests cover the health endpoint, seeded home page, review dashboard, review creation and Excel export.
 
----
+## Demo limitations
 
-## 3) Allow PostgreSQL connections from your Tailscale network
-By default, PostgreSQL often listens only on localhost. To allow connections coming from Tailscale:
+- Data is fictional and intended only to demonstrate the workflow.
+- The free hosted filesystem is disposable; it is not a production datastore.
+- Reviewer selection is workflow identification, not secure authentication.
+- The demo is not intended for sensitive, personal or unpublished research data.
+- The browser UI loads Bootstrap and DataTables from public CDNs.
+- Included sample PDFs are not required by the demo and should be reviewed for redistribution rights before a public release.
 
-1. Open and edit ```postgresql.conf```
-    - Find your ```postgresql.conf``` file (Windows  usually have it under the PostgreSQL “data” directory, something like ```C:\Program Files\PostgreSQL\<version>\data\```).
-    - Set ```listen_addresses``` to include your Tailscale interface. The simplest option is:
-    ```conf
-    listen_addresses = '*'
-    ```
-    - With this, PostgreSQL listens for connections; the actual restriction is carried out in ```pg_hba.conf``` and the firewall.
+## Differences from the original project
 
-2. Open and edit ```pg_hba.conf```
-    - In ```pg_hba.conf```, add a rule to allow only Tailscale IPs (CGNAT range) to reach your DB (you can add this line at the end of the file):
-    ```conf
-    host    systrev_db   review_user   100.64.0.0/10   scram-sha-256
-    ```
-    - This enables any device on the Tailnet (Tailscale 100.x IP addresses) to connect to the database and user.
+The original deployment expected a manually configured PostgreSQL server exposed to reviewers through Tailscale. This branch adds a seeded SQLite mode, portable launch scripts, health checks, Docker/Render deployment and portfolio-focused documentation while retaining PostgreSQL support and the original review workflow.
 
-3. Restart PostgreSQL
-Restart the PostgreSQL service so changes apply.
-    - Windows:
-        - Win + R
-        - Type ``services.msc`` and press Enter
-        - Search for a service type:
-            - ``postgresql-x64-16`` (or 15, 14…)
-        - Right click -> **Restart**
+## Portfolio note
 
----
-
-## 4) Install Tailscale
-
-1. Download Tailscale:
-    - [https://tailscale.com/download](https://tailscale.com/download)
-
-3. Install it like any normal application.
-
-4. Log in to the correct tailnet
-    - Open Tailscale
-    - Click **Log in**
-    - Make sure you log into the **tailnet you will share with reviewers**
-    
----
-
-## 5) Enable MagicDNS
-MagicDNS lets you use a stable hostname (recommended), for example:
-    - ``syst-rev-server``
-1. In the Tailscale admin console:
-    - Go to **DNS**
-    - Enable **MagicDNS**
-    - In **HTTPS Certificates**, tap **Enable HTTPS** and accept the consent.
-    
-2. In the Tailscale app settings:
-   - Make sure that **Use Tailscale DNS settings** is enabled (wording can vary slightly by OS).
-
-## 6) Rename the server device
-In the Tailscale admin console
-- Go to **Machines** 
-- Rename the server to something simple like: ``syst-rev-server``
-    - This will be used as the hostname inside your tailnet (with MagicDNS).
-    
-## 7) Open PostgreSQL port 5432 in the firewall (Tailscale only)
-You want PostgreSQL reachable only over Tailscale, not from the public internet.
-- Windows (GUI method):
-    1. Win + R 
-    2. Type ``wf.msc`` and press Enter
-    3. On the right side: Inbound Rules -> **New Rule...**
-    4. Rule Type: **Port**
-    5. Protocol: **TCP**
-    6. Specific local ports: **5432**
-    7. Action: **Allow the connection**
-    8. Profile: usually **Private** (and Domain if applicable). Do not select Public
-    9. Name it: ``PostgreSQL 5432 (Tailscale)``
-    Now restrict the rule to Tailscale IPs:
-    1. Find the rule you created → right click → Properties
-    2. Go to **Scope**
-    3. Remote IP address → “These IP addresses” → Add:
-        - ``100.64.0.0/10``
-
----
-
-## 8) Install Python
-1. Download PythonL
-    - [https://www.python.org/downloads/](https://www.python.org/downloads/)
-2. Windows notes:
-    - During install, check: **Add Python to PATH**
-
----
-
-## 9) Download the GitHub project and install dependencies
-1. Download this project: download ZIP from GitHub and extract it.
-
-2. Install dependencies (choose one option)
-
-### Option A (recommended): Run the automatic setup script (Windows)
-1. In the extracted project folder, double-click ``server_setup.bat``
-2. Wait until the script finishes. If everything goes well, you should see a success message saying:
-    ```bash
-    Setup is complete. Check and configure the .env file, then run the run.bat file.
-    ```
-
-### Option B: Install manually using a terminal (Windows/macOS/Linux)
-
-1. Open a terminal 
-    - Windows: PowerShell
-    - macOS: Terminal
-    - Linux: Terminal
-
-2. Go to the project folder. Then:
-    ```bash
-    # Windows:
-    cd C:\path\to\project
-    # macOS/Linux:
-    cd /path/to/project
-    ```
-3. Create a virtual environment (venv):
-    ```bash
-    python -m venv venv
-    ```
-4. Activate venv
-    ```bash
-    # Windows:
-    venv\Scripts\activate
-    # maxOS/Linux:
-    source venv/bin/activate
-    ```
-5. Install requirements:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
----
-
-## 10) Configure the ``.env`` file
-1. Copy the file ``.env_example`` and rename it to ``.env``
-2. Edit ``.env`` and set your DATABASE_URL:
-    - Required format:
-    ```text
-    DATABASE_URL="postgresql://{user_name}:{password}@{magicdns_hostname OR tailscale_ip}:5432/{db_name}"
-    ```
-    - Example 1 (with ecommended with MagicDNS hostname):
-    ```text
-    DATABASE_URL="postgresql://review_user:your_strong_password_here@syst-rev-server:5432/systrev_db"
-    ```
-    
-    - Example 2 (using a Tailscale IP):
-    ```text
-    DATABASE_URL="postgresql://review_user:your_strong_password_here@100.104.194.28:5432/systrev_db"
-    ```
-
----
-
-## 11) Run the app on the server and expose the web app to reviewers with Tailscale Serve
-
-Two options:
-
-### Option A (recommended): Run the automatic run server script (Windows)
-1. In the extracted project folder, double-click ``run_server.bat``
-2. Wait until the script finishes. If everything goes well, you should see a message saying 
-    ```bash
-    Serve started and running in the background.
-    ```
-    - **Do not close this terminal window**. If you close it, the server will stop and the app will become unreachable.
-
-
-
-### Option B: using a terminal (Windows/macOS/Linux)
-1. Open the terminal and go to the project folder.
-2. Activate venv
-3. With the venv activated, type:
-    ```bash
-    python app.py
-    ```
-4. Confirm it works locally on the server:
-    ```text
-    http://127.0.0.1:5000
-    ```
-
-5. Enable Serve for your tailnet (one-time)
-    - If Serve is disabled, Tailscale will tell you and give you a URL to enable it in the admin console.
-6. Start Serve
-    - Open the terminal, and type:
-    ```bash
-    tailscale serve --bg 5000
-    ```
-    This publishes your local app (running on 127.0.0.1:5000) as an HTTPS URL inside your tailnet.
-    
-    
-    
-
----
-
-## 12) Run the app on the server and expose the web app to reviewers with Tailscale Serve
-
-3. Share the URL with reviewers:
-    - ``tailscale serve`` will show a URL similar to:
-    ```text
-    https://syst-rev-server.<your-tailnet-name>.ts.net
-    ```
-    That is the URL reviewers should open.
-
-
-
----
-
-## 13) Share the server machine with reviewers (Device Sharing):
-In the Tailscale Admin Console:
-1. Go to the **Machines** tab.
-2. Find your server machine, click the **three dots (… )** menu, then select **Share**.
-3. Open the **Share via email** tab.
-4. Enter the reviewer’s email address and click **Share**.
-
----
+This branch is deliberately optimized as a **Portfolio / Demo Version**. The production-style architecture, dual database support, reference-import pipeline, consensus workflow, exports and containerized deployment are the most relevant technical points to highlight in a CV or interview.
