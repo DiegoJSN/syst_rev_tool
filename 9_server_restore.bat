@@ -2,8 +2,8 @@
 setlocal EnableExtensions EnableDelayedExpansion
 
 REM ======== CONFIG (EDIT THIS) ========
-set "PG_BIN=C:\Program Files\PostgreSQL\18\bin"
-set "IN_DIR=G:\Mi Unidad\Backups\Postgres\"
+if not defined PG_BIN set "PG_BIN=C:\Program Files\PostgreSQL\18\bin"
+if not defined IN_DIR set "IN_DIR=%~dp0backups"
 set "DB_NAME=systrev_db"
 set "DB_OWNER=review_user"
 set "PGHOST=localhost"
