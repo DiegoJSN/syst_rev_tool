@@ -27,10 +27,11 @@ Free Render services can take about a minute to wake after a period of inactivit
 
 ## Run the demo on your computer
 
-You only need to follow **one** of the two options below:
+You only need to follow **one** of the three options below:
 
 - **Option 1 — Python:** recommended if Python is already installed.
 - **Option 2 — Docker:** recommended if Docker Desktop is already installed.
+- **Option 3 — Windows executable:** easiest option; no technical software is required.
 
 You do not need PostgreSQL, Tailscale, passwords or an `.env` file.
 
@@ -116,6 +117,38 @@ To stop the demo, return to the terminal and press **Ctrl+C**. Docker removes th
 - **Port 5000 is already in use:** stop the other application using that port. With Docker, you can instead run `docker run --rm -p 8080:5000 syst-rev-demo` and open <http://127.0.0.1:8080>.
 - **The page does not open:** confirm the terminal is still open and that the application has not displayed an error.
 - **You want a clean starting point:** use the **Reset demo** button in the blue banner.
+
+### Option 3 — Windows executable (easiest)
+
+Choose this option if you use Windows and do not want to install Python, Git or Docker.
+
+1. Open the [latest release](https://github.com/DiegoJSN/syst_rev_tool/releases/latest).
+2. Under **Assets**, download `SystRevTool-Demo.exe`.
+3. Double-click the downloaded file.
+4. Keep the black application window open. The demo opens automatically in your default browser.
+5. When finished, close the black window or press **Ctrl+C** inside it.
+
+The executable:
+
+- includes Python and all required packages;
+- creates fictional demo data automatically;
+- finds another local port if port 5000 is busy;
+- opens the correct page in the browser;
+- stores no permanent research data.
+
+Windows may display a Microsoft Defender SmartScreen message because this portfolio executable is not commercially code-signed. If the file was downloaded from this repository's official Releases page, select **More info → Run anyway**. Do not run copies obtained from other sources.
+
+#### Build the executable yourself
+
+If you have Python installed and want to reproduce the build:
+
+```powershell
+git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
+cd syst_rev_tool
+powershell -ExecutionPolicy Bypass -File .\build_executable.ps1
+```
+
+The resulting file is created at `dist\SystRevTool-Demo.exe`. GitHub also contains a Windows workflow that builds and smoke-tests the same executable.
 
 ## Deploy on Render
 
