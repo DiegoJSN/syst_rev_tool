@@ -3,6 +3,14 @@ __pycache__/
 instance/
 uploads/
 .env
+.env_*
+!.env.example
+.pytest_cache/
+.coverage
+.pip-tmp/
+.tmp/
+.venv-*/
+.audit-packages/
 .venv/
 venv/
 .DS_Store
