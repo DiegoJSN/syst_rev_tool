@@ -194,3 +194,20 @@ def seed_demo(app):
             db.execute("INSERT INTO first_screening (id_review,id_reviewer,id_study,decision) VALUES (%s,%s,%s,%s)", (review_id, reviewer, study_ids[3], decision))
             db.execute("INSERT INTO first_screening_conflicts (id_review,id_reviewer,id_study,decision) VALUES (%s,%s,%s,%s)", (review_id, reviewer, study_ids[3], decision))
         db.commit()
+
+
+def reset_demo(app):
+    """Clear disposable demo content and restore the original fixture."""
+    if not app.config.get("DEMO_MODE"):
+        raise RuntimeError("Demo reset is disabled.")
+    with app.app_context():
+        db = get_db()
+        for table in (
+            "second_screening_conflicts", "second_screening",
+            "first_screening_conflicts", "first_screening",
+            "studies", "exclusion_reasons", "reviewers", "review",
+        ):
+            db.execute(f"DELETE FROM {table}")
+        db.commit()
+    seed_demo(app)
+
