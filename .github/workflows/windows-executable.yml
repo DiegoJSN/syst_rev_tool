@@ -1,0 +1,44 @@
+name: Build Windows executable
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "demo-v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Build executable
+        shell: powershell
+        run: .\build_executable.ps1
+      - name: Smoke test packaged application
+        shell: powershell
+        run: |
+          $process = Start-Process -FilePath ".\dist\SystRevTool-Demo.exe" -PassThru -WindowStyle Hidden
+          try {
+            $ready = $false
+            1..30 | ForEach-Object {
+              Start-Sleep -Seconds 1
+              try {
+                $response = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5000/healthz
+                if ($response.StatusCode -eq 200) { $ready = $true }
+              } catch {}
+              if ($ready) { return }
+            }
+            if (-not $ready) { throw "Packaged application did not become healthy." }
+          } finally {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SystRevTool-Demo-Windows
+          path: dist/SystRevTool-Demo.exe
+          if-no-files-found: error
+
