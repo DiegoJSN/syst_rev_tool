@@ -1,10 +1,11 @@
 from dotenv import load_dotenv
-load_dotenv()  # carga .env automáticamente desde la carpeta actual. Asi te evitas escribir en la terminal lo de "DATABASE_URL=f"postgresql://review_user:[PASSWORD]@[IP]:5432/systrev_db"
+load_dotenv()
 
 import os
 import csv
 import math
 import random
+import secrets
 import zipfile
 from io import BytesIO
 from typing import Optional, Tuple, List
@@ -19,13 +20,17 @@ from openpyxl import Workbook
 # Web of Science .xls reader
 from python_calamine import CalamineWorkbook
 
-from db import init_db, get_db, close_db
+from db import init_db, seed_demo, get_db, close_db
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-    app.config["DATABASE_URL"] = os.environ.get("DATABASE_URL")
+    database_url = os.environ.get("DATABASE_URL", "sqlite:///instance/demo.db")
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+    app.config["DATABASE_URL"] = database_url
+    app.config["DEMO_MODE"] = os.environ.get(
+        "DEMO_MODE", str(database_url.startswith("sqlite:///"))
+    ).lower() in {"1", "true", "yes"}
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
     os.makedirs(app.instance_path, exist_ok=True)
@@ -33,8 +38,13 @@ def create_app() -> Flask:
 
     # Initialize DB if missing
     init_db(app)
+    seed_demo(app)
 
     app.teardown_appcontext(close_db)
+
+    @app.context_processor
+    def demo_context():
+        return {"demo_mode": app.config["DEMO_MODE"]}
 
     # ---------- helpers ----------
 
@@ -509,6 +519,11 @@ def create_app() -> Flask:
     @app.route("/")
     def index():
         return redirect(url_for("home"))
+
+    @app.route("/healthz")
+    def healthz():
+        get_db().execute("SELECT 1").fetchone()
+        return {"status": "ok"}
 
     @app.route("/0_home.html", methods=["GET", "POST"])
     def home():
@@ -2004,4 +2019,4 @@ def create_app() -> Flask:
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
