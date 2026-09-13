@@ -10,9 +10,14 @@ uploads/
 .pip-tmp/
 .tmp/
 .venv-*/
+.venv-build/
+build/
+dist/
+*.spec
 .audit-packages/
 .venv/
 venv/
 .DS_Store
 /SQLite
 /test
+
