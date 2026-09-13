@@ -38,7 +38,11 @@ class DemoSmokeTest(unittest.TestCase):
         }, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Recruiter test", response.data)
+        reset = self.client.post("/demo/reset", follow_redirects=True)
+        self.assertEqual(reset.status_code, 200)
+        self.assertNotIn(b"Recruiter test", reset.data)
 
 
 if __name__ == "__main__":
     unittest.main()
+
