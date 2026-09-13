@@ -21,7 +21,8 @@ jobs:
       - name: Smoke test packaged application
         shell: powershell
         run: |
-          $process = Start-Process -FilePath ".\dist\SystRevTool-Demo.exe" -PassThru -WindowStyle Hidden
+          $exe = ".\dist\SystRevTool-Demo\SystRevTool-Demo.exe"
+          $process = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
           try {
             $ready = $false
             1..30 | ForEach-Object {
@@ -36,9 +37,18 @@ jobs:
           } finally {
             Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
           }
+      - name: Package and checksum
+        shell: powershell
+        run: |
+          Set-Location dist
+          Compress-Archive -Path "SystRevTool-Demo" -DestinationPath "SystRevTool-Demo-Windows.zip"
+          (Get-FileHash "SystRevTool-Demo-Windows.zip" -Algorithm SHA256).Hash.ToLower() |
+            Set-Content "SystRevTool-Demo-Windows.zip.sha256"
       - uses: actions/upload-artifact@v4
         with:
           name: SystRevTool-Demo-Windows
-          path: dist/SystRevTool-Demo.exe
+          path: |
+            dist/SystRevTool-Demo-Windows.zip
+            dist/SystRevTool-Demo-Windows.zip.sha256
           if-no-files-found: error
 
