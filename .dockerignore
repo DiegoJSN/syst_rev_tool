@@ -1,6 +1,9 @@
 .git
 .env*
 .venv*
+build
+dist
+*.spec
 venv
 __pycache__
 *.pyc
@@ -11,3 +14,4 @@ tests
 images
 example_pdfs
 Instructions_for_reviewers_*
+
