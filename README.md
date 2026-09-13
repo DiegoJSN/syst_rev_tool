@@ -109,6 +109,7 @@ The smoke tests cover the health endpoint, seeded home page, review dashboard, r
 ## Demo limitations
 
 - Data is fictional and intended only to demonstrate the workflow.
+- The **Reset demo** control restores the original fixture after experimentation.
 - The free hosted filesystem is disposable; it is not a production datastore.
 - Reviewer selection is workflow identification, not secure authentication.
 - The demo is not intended for sensitive, personal or unpublished research data.
@@ -122,3 +123,4 @@ The original deployment expected a manually configured PostgreSQL server exposed
 ## Portfolio note
 
 This branch is deliberately optimized as a **Portfolio / Demo Version**. The production-style architecture, dual database support, reference-import pipeline, consensus workflow, exports and containerized deployment are the most relevant technical points to highlight in a CV or interview.
+
