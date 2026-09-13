@@ -20,7 +20,7 @@ from openpyxl import Workbook
 # Web of Science .xls reader
 from python_calamine import CalamineWorkbook
 
-from db import init_db, seed_demo, get_db, close_db
+from db import init_db, seed_demo, reset_demo, get_db, close_db
 
 
 def create_app() -> Flask:
@@ -524,6 +524,15 @@ def create_app() -> Flask:
     def healthz():
         get_db().execute("SELECT 1").fetchone()
         return {"status": "ok"}
+
+    @app.post("/demo/reset")
+    def demo_reset():
+        if not app.config["DEMO_MODE"]:
+            abort(404)
+        reset_demo(app)
+        session.clear()
+        flash("Demo data restored.", "success")
+        return redirect(url_for("home"))
 
     @app.route("/0_home.html", methods=["GET", "POST"])
     def home():
@@ -2020,3 +2029,4 @@ def create_app() -> Flask:
 if __name__ == "__main__":
     app = create_app()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
+
