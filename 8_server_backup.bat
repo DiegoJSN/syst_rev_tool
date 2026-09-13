@@ -2,9 +2,9 @@
 setlocal EnableExtensions EnableDelayedExpansion
 
 REM ======== CONFIG (EDIT THIS) ========
-set "PG_BIN=C:\Program Files\PostgreSQL\18\bin"
+if not defined PG_BIN set "PG_BIN=C:\Program Files\PostgreSQL\18\bin"
 set "DB_NAME=systrev_db"
-set "OUT_DIR=H:\Mi Unidad\Backups\server_soslivestock"
+if not defined OUT_DIR set "OUT_DIR=%~dp0backups"
 set "PGHOST=localhost"
 set "PGPORT=5432"
 set "PGUSER=postgres"
