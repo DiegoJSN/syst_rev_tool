@@ -237,7 +237,7 @@ def create_app() -> Flask:
     def require_login(review_id: int) -> Tuple[int, str]:
         login = session.get("login")
         if not login or login.get("review_id") != review_id:
-            raise PermissionError("Please select your name (double verification) in the \"Log in as\" section")
+            raise PermissionError("Please select your name in the \"Log in as\" section")
         return int(login["reviewer_id"]), str(login["reviewer_name"])
 
     def split_participants(text: str) -> List[str]:
@@ -693,26 +693,20 @@ def create_app() -> Flask:
             (review_id,),
         ).fetchall()
 
-        # Random order for both login dropdowns
         names = [r["reviewer_name"] for r in reviewers]
-        names1 = names[:]
-        names2 = names[:]
-        random.shuffle(names1)
-        random.shuffle(names2)
 
         if request.method == "POST":
             action = request.form.get("action")
 
             if action == "login":
-                name1 = (request.form.get("login_name_1") or "").strip()
-                name2 = (request.form.get("login_name_2") or "").strip()
-                if not name1 or not name2 or name1 != name2:
-                    flash("Login failed: select your name twice, and both must match.", "error")
+                name = (request.form.get("login_name") or "").strip()
+                if not name:
+                    flash("Login failed: select your name.", "error")
                     return redirect(url_for("review_main", review_id=review_id))
 
                 row = db.execute(
                     "SELECT id, reviewer_name FROM reviewers WHERE id_review = %s AND reviewer_name = %s;",
-                    (review_id, name1),
+                    (review_id, name),
                 ).fetchone()
                 if not row:
                     flash("Login failed: reviewer not found.", "error")
@@ -941,8 +935,7 @@ def create_app() -> Flask:
             "review_main.html",
             review=review,
             reviewers=reviewers,
-            names1=names1,
-            names2=names2,
+            names=names,
             total=total,
             duplicates_removed=duplicates_removed,
             total_loaded=total_loaded,
