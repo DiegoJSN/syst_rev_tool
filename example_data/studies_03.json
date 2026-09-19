@@ -1,0 +1,434 @@
+{
+  "studies": [
+    {
+      "study_id": 169,
+      "doi": "10.1177/00420980221142706",
+      "title": "Deindustrialisation and the politics of subordinate degrowth: The case of Greater Buenos Aires, Argentina",
+      "authors": "Schindler, Seth; Kanai, J. Miguel; Diaz Bay, Javier",
+      "year": 2023,
+      "abstract": "Cities in low- and middle-income countries have experienced deindustrialisation as localised agglomerations that historically served domestic and regional markets have become exposed to highly productive global value chains as capital has been (re)allocated to primary sectors. State, corporate and social actors have responded to economic decline by embracing a range of coping and adaptation strategies, some of which are consistent with degrowth, but they are often combined with business-as-usual initiatives in pursuit of economic growth. We refer to this as subordinate degrowth because localised responses are conditioned by the subordinate position of countries and cities in the global economy. While we acknowledge its divergence from 'pure' ideal-type degrowth, we do not dismiss the transformative potential of incremental change. Indeed, we argue that any realistic strategy to spatialise degrowth within cities must recognise the indeterminacy and messiness of urban politics. We employ subordinate degrowth as an analytic to interpret responses to deindustrialisation and economic decline in Buenos Aires, Argentina. Our analysis attends to three meso-level blind spots that characterise much degrowth scholarship, between (1) particular and universal, (2) advanced-industrial and agrarian ideal-types and (3) past/current socio-technical regimes and 'pure' degrowth.",
+      "journal": "URBAN STUDIES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 170,
+      "doi": null,
+      "title": "Germinating degrowth? On-farm adaptation and survival in Hungarian alternative food networks",
+      "authors": "Strenchock, Logan",
+      "year": 2021,
+      "abstract": null,
+      "journal": "FOOD FOR DEGROWTH: Perspectives and Practices",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 171,
+      "doi": "10.1016/j.aquaeng.2025.102573",
+      "title": "Flow-through and cyclic fed-batch cultivation of the green microalga Haematococcus pluvialis in recirculating aquaculture effluent: Strategies for sustained biomass production and astaxanthin biosynthesis",
+      "authors": "Timilsina, Hemanta; Hiltunen, Minna; Calderini, Marco L.; Salmi, Pauliina; Pirhonen, Juhani; Pulkkinen, Katja",
+      "year": 2025,
+      "abstract": "Integrating microalgal cultivation with recirculating aquaculture systems (RAS) offers a sustainable solution for nutrient recovery and the production of high-value bioproducts. The conventional batch cultivation technique for microalgae is constrained by limited biomass yields and short cultivation cycles. This study investigated the potential of cultivating Haematococcus pluvialis in RAS effluent and assessed flow-through and cyclic fed-batch cultivation strategies to enhance biomass and astaxanthin production. Both cultivation modes were investigated in two separate laboratory-scale experiments. Experiment I used (i) synthetic medium (modified BG-11) and (ii) untreated RAS effluent, while Experiment II used (i) autoclaved and (ii) filtered-autoclaved RAS effluent. Light stress was applied to the outflow from flow-through and the withdrawn culture from cyclic fed-batch cultivation to stimulate astaxanthin biosynthesis. In both experiments, the flow-through mode consistently outperformed the cyclic fed-batch mode in growth rate, cell density, biomass concentration, and nutrient uptake. In Experiment I, untreated RAS effluent supported H. pluvialis growth; however, microbial interference during the post-growth phase affected astaxanthin synthesis. In Experiment II, using pretreated RAS effluent, the flow-through mode achieved a maximum growth rate of 0.39 +/- 0.01 day(-)(1) , nitrate removal of 64.28 +/- 1.84 % and similar to 100 % phosphate removal. The cyclic fed-batch mode achieved a maximum growth rate of 0.34 +/- 0.01 day(-)(1) , nitrate removal of 55.05 +/- 6.25 % and similar to 100 % phosphate removal. Although, astaxanthin content was similar between modes (6.30 +/- 0.48 mgg(-)(1) DW), the higher biomass concentration in flow-through mode resulted in a higher astaxanthin concentration (2.96 +/- 0.78 mgL(-)(1)) compared to cyclic fed-batch mode (1.6 +/- 0.31 mgL(-)(1)).",
+      "journal": "AQUACULTURAL ENGINEERING",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 172,
+      "doi": "10.1080/03066150.2020.1854740",
+      "title": "A green new deal for agriculture: for, within, or against capitalism?",
+      "authors": "Selwyn, Benjamin",
+      "year": 2021,
+      "abstract": "Covid-19 has highlighted the destructiveness of modern agro-industry upon biosphere and humanity. Its contribution to environmental degradation intertwines with socio-economic inequality and labour exploitation. There are increasing calls for a green new deal (GND) to counter these dangers. This article argues that a GND for agriculture must combat environmental degradation, social inequality and labour exploitation, rather than aim to re-boot capitalist economies. This article identifies a number of areas for discussion and political action - reorientation of state subsidies, workers' rights, agrarian reform, the decommodification of food, agroecology, possibilities for urban agriculture, the application of new technologies, and rewilding.",
+      "journal": "JOURNAL OF PEASANT STUDIES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 173,
+      "doi": null,
+      "title": "Meat-me: From flesh machines to individualities. A case for an anti-speciesist degrowth",
+      "authors": "Navarro, Eva",
+      "year": 2025,
+      "abstract": "Degrowth, a leading paradigm addressing our socio-ecological crisis, criticizes the highly destructive animal factory-farming industry. However, it does not challenge the commodification of sentient beings and the underlying system that perpetuates the oppression of the less-than-human. Animals-as-food, reduced to flesh machines, are exploited with institutional legitimacy rooted in societal belief systems. Drawing upon posthumanist and ecofeminist perspectives, this article argues that to achieve a just transformation, the degrowth proposal must gain ethical congruence and dismantle anthropocentric worldviews. Adopting an anti-speciesist framework becomes crucial to overcoming socio-ecological collapse, fundamentally reshaping our interactions with cohabiting individualities within the biosphere.",
+      "journal": "JOURNAL OF POLITICAL ECOLOGY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 174,
+      "doi": "10.3389/fpls.2024.1444819",
+      "title": "Leaf senescence characteristics and economic benefits of rice under alternate wetting and drying irrigation and blended use of polymer-coated and common urea",
+      "authors": "Qi, Dongliang; Chen, Si; Yue, Wenjun; Duan, Yonggang",
+      "year": 2024,
+      "abstract": "Water-saving irrigation and the mixed application of controlled-release nitrogen fertilizer (CRNF) and common urea (CU; with a higher nitrogen release rate) have shown promise in improving rice yield with high resource use efficiency. However, the physiological mechanism underlying this effect remains largely unknown. This study involved a field experiment on rice in Jingzhou City, Central China, in 2020 and 2021. Two irrigation regimes were employed [alternate wetting and drying irrigation (AWD) and conventional flood irrigation (CI)], with three nitrogen (N) compounding modes [00% CU (N1), 60% CRNF + 40% CU (N2), and 100% CRNF (N3)] with an equal N rate of 240 kg ha-1. The results indicated a significant interactive effect of watering regimes and N compounding modes on net photosynthetic rate (P n), leaf area index (LAI), and SPAD values; activities of superoxide dismutase (SOD), peroxidases (POD), catalase (CAT), glutamine synthetase (GS), glutamine 2-oxoglutarate amidotransferase (GOGAT), and nitrate reductase (NR); and the contents of malondialdehyde (MDA) and soluble protein in rice leaves. Compared with N1, N2 and N3 increased the P n, LAI, and SPAD values; activities of SOD, POD, CAT, NR, GS, and GOGAT; and soluble protein content but decreased MDA content in the post-growth (heading and maturity) stages by 8.7%-31.2% under the two irrigation regimes. Compared to CI (traditional irrigation), AWD had higher P n, LAI, and SPAD values; activities of SOD, POD, CAT, NR, GS, and GOGAT; and soluble protein content (increased by 12.1%-38.0%, and lower MDA content (reduced by 13.1%-27.6%) irrespective of N compounding modes. This suggested that AWD combined with N2 and N3 could delay the leaf senescence of rice, thus achieving a larger grain yield. Moreover, AWD significantly decreased water costs (irrigation amount) and labor costs (irrigation frequency), thus increasing total income. N2 decreased fertilizer costs with a higher or comparable total income compared with N3. Therefore, the AWDN2 treatment achieved the highest net income (13,907.1 CNY ha-1 in 2020 and 14,085.7 CNY ha-1 in 2021). AWD interacted with 60% CRNF + 40% (N2) to delay leaf senescence by improving photosynthesis, antioxidant defense system, osmoregulation, and N assimilation, contributing to high grain yield and net income in rice.",
+      "journal": "FRONTIERS IN PLANT SCIENCE",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 175,
+      "doi": "10.1177/02780771251374886",
+      "title": "Ethnobiology and Degrowth",
+      "authors": "Flachs, Andrew",
+      "year": 2025,
+      "abstract": "For centuries, global political economic relations have been informed by a model of growth premised on transforming plants, animals, knowledge, labor, water, and land into scarce commodities. Growing production, consumption, and profit remain unquestioned goods across many sectors of contemporary life. Through our evolving relationships with colonialism, capitalism, and Western science, ethnobiologists are increasingly interrogating the political and economic consequences of our interdisciplinary scholarship. Thus, we offer a valuable perspective on a diverse ecological and social science agenda: degrowth. In this review essay, I explore how ethnobiology might contribute to degrowth research through its empirical approach, alternative valuation, focus on relationships over commodification, emphasis on local context, and recognition that humans shape and are shaped through the environments in which we live. Ethnobiologists meticulously describe systems of social, ecological, and economic interaction. In doing so, we fill a need for studies that document life under degrowth conditions. Similarly, degrowth research offers a vocabulary for ethnobiologists to recognize how we make a unique, data-rich contribution to discussions of political economy and political ecology. Ethnobiologists and degrowth researchers have much to say to each other through our shared commitment to action-oriented, imaginative research that explores socioecological relationships of care and interconnection.",
+      "journal": "JOURNAL OF ETHNOBIOLOGY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 176,
+      "doi": "10.1016/j.jhazmat.2020.123256",
+      "title": "Foliar application of silicon improves stem strength under low light stress by regulating lignin biosynthesis genes in soybean (Glycine max (L.) Merr.)",
+      "authors": "Hussain, Sajad; Li Shuxian; Mumtaz, Maryam; Shafiq, Iram; Iqbal, Nasir; Brestic, Marian; Shoaib, Muhammad; Qin Sisi; Li, Wang; Mei, Xu; Bing, Chen; Zivcak, Marek; Rastogi, Anshu; Skalicky, Milan; Hejnak, Vaclav; Liu Weiguo; Yang Wenyu",
+      "year": 2021,
+      "abstract": "In order to improve soybean's resistance to lodging, silicon (Si) solutions at concentrations of 0,100, 200,300 mg kg(-1) were applied during the seedling stage. The Si accumulation in different parts of the plants, the photosynthetic parameters of leaves and chlorophyll content, the stem bending resistance, the expression of genes of lignin biosynthesis and associated enzyme activity and sap flow rates were measured at early and late growth stages. The potential mechanisms for how Si improve growth and shade tolerance, enhances lodging resistance and improves photosynthesis were analyzed to provide a theoretical basis for the use of Si amendments in agriculture. After application of Si at 200 mg kg(-1), the net photosynthetic rate of soybeans increased by 46.4 0/0 in the light and 33.3 % under shade. The application of Si increased chlorophyll content, and fresh weight of leaves, reduced leaf area and enhanced photosynthesis by increasing stomatal conductance. The activity of peroxidase (POD), 4-coumarate:CoA ligase (4CL), cinnamyl alcohol dehydrogenase (CAD) and phenylalanine ammonia-lyase (PAL) increased during pre-and post-growth periods, whereas Si also increased ligninaccumulation and inhibited lodging. We concluded that Si affects the composition of plant cell walls components, mostly by altering linkages of non-cellulosic polymers and lignin. The modifications of the cell wall network through Si application could be a useful strategy to reduce shading stress in intercropping.",
+      "journal": "JOURNAL OF HAZARDOUS MATERIALS",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 177,
+      "doi": "10.1177/09632719251369357",
+      "title": "Degrowth and (un)sustainable lifestyles in two Danish ecovillages",
+      "authors": "Nielsen, Peter; Riisgaard, Lone",
+      "year": 2025,
+      "abstract": "Based on an extensive qualitative study, this paper explores sustainability in two Danish ecovillages and discusses the findings (meta)theoretically. Linked to the degrowth literature, it takes its point of departure in critical realism by identifying mechanisms related to (un)sustainability in these ecovillages. The most important mechanism generating their sustainable practices is identified as a subsistence political economy, a mechanism rooted in infrastructures such as regenerative farming and direct democracy. However, there is another important mechanism affecting the sustainability of the ecovillages, namely middle-class ideals. This mechanism generates unsustainable, growth-oriented lifestyles, which are also rooted in infrastructures such as large family houses and divisions between the private and the communal. Generally, it is concluded that in these two ecovillages the subsistence political economy mechanism ensures a move towards more sustainable lifestyles for all villagers, while infrastructure sustaining middle-class ideals pulls in the opposite direction.",
+      "journal": "ENVIRONMENTAL VALUES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 178,
+      "doi": "10.1177/09632719251318139",
+      "title": "Degrowth as ideology: Making values for the soil of Amsterdam",
+      "authors": "Savini, Federico",
+      "year": 2025,
+      "abstract": "Degrowth research critiques the ideology of growth but does not explain how degrowth values gain public traction and turn into a new ideology. This article shows that degrowth values emerge from the contestation of institutions that maintain the growth imperative and the proposition of new institutions embodying alternative values. First, the article problematises the (counter)hegemonic challenge posed by degrowth, explaining why degrowth research needs to question the institutions that influence social practices. Second, it conceptualises degrowth as a double movement of contestation and proposition that works within and against the ideological apparatus sustaining the growth imperative. The historical struggle to save the Lutkemeerpolder in Amsterdam - the last remaining agricultural land in the city - shows how a degrowth ideology developed through the contestation of the institutional apparatus sustaining the growth of the airport-related industry. This struggle unfolded into a wider movement that has proposed new institutions embodying degrowth values such as commoning and conviviality.",
+      "journal": "ENVIRONMENTAL VALUES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 179,
+      "doi": "10.1080/03066150.2024.2368857",
+      "title": "Australia's new peasantry: towards a politics and practice of custodianship on agroecology-oriented farms",
+      "authors": "Jonas, Tammi; Gressier, Catie",
+      "year": 2025,
+      "abstract": "Since settlement, colonial values of productivity and improvement have transformed Aboriginal and Torres Strait Islander Country into a site of agricultural extraction. We examine the nascent peasantisation movement in Australia driven by small-scale farmers rejecting colonial capitalist agriculture within an agroecological transition. Our case studies explore how new peasants seek guidance from First Peoples and peasants in developing a politics and practice of custodianship, while fostering degrowth economies. Custodianship, we argue, offers a theoretical and practical framework for the agroecological transition in settler contexts through foregrounding social and ecological reparations across scales from the farm to global food sovereignty activism.",
+      "journal": "JOURNAL OF PEASANT STUDIES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 180,
+      "doi": "10.1016/j.futures.2012.03.021",
+      "title": "What economic democracy for degrowth? Some comments on the contribution of socialist models and Cuban agroecology",
+      "authors": "Boillat, Sebastien; Gerber, Julien-Francois; Funes-Monzote, Fernando R.",
+      "year": 2012,
+      "abstract": "While degrowth is about reducing energy and material flows in the economy while sustaining basic human needs, capitalism fosters the opposite trend. How then is degrowth to be implemented on a large scale? In line with different critical intellectual traditions, we argue that degrowth is unlikely to occur within an economy based on capital accumulation and free market of assets. Our objective is then to preliminarily investigate the links between economic structures, democratic principles, and degrowth. We do this, firstly, by briefly exploring some of the main theoretical models of economic democracy in order to find out their potential for achieving sustainable degrowth. In our view, models of self-managed socialism have the best potential for this. Secondly, we intend to learn some empirical lessons from a countrywide experience: Cuban agroecology, today's largest real-life experience of agroecological degrowth. Our hypothesis is that the Cuban economy, which limits the private accumulation of capital and of productive assets, is in a better position for achieving forms of sustainable degrowth than capitalist economies, but that it would be even more so with more democracy. The Cuban agricultural system faces the challenge to free itself from the central planning tradition. This could be achieved by following the current process of giving increasing autonomy to small producers. Specifically, we argue that small-scale farmer cooperatives have the best potential for achieving the degrowth-oriented goals of agroecology. (C) 2012 Elsevier Ltd. All rights reserved.",
+      "journal": "FUTURES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 181,
+      "doi": "10.1016/j.wri.2025.100318",
+      "title": "Rice, wheat or dust? Water resource carrying capacity estimation by degrowth transition scenario for Fars Province, Iran",
+      "authors": "Samimi, Somaieh; Ahmadzadeh, Faraham; Keshtkar, Mostafa; Sayahnia, Romina",
+      "year": 2025,
+      "abstract": "Agriculture remains the dominant consumer of freshwater globally, with projected increases in demand driven by irrigation expansion. In arid regions such as Iran, this intensifies competition among agriculture, industry, and ecosystems, exacerbating water stress-as evidenced by the desiccation of Tashk-Bakhtegan wetlands in Fars Province, a key source of dust storms affecting local communities. This study employs system dynamics modeling and the Water Resource Carrying Capacity (WRCC) framework to assess four degrowth scenarios focused on rice and wheat cultivation, evaluating their effects on water consumption and economic value-added. Results show that eliminating rice production and reducing wheat cultivation by 10 %, or converting 20 % of irrigated wheat to rainfed farming, yielded only marginal improvements in the Water Resource Carrying Capacity (WRCC) index. Reaching a sustainable WRCC demands at least a 25 % reduction in agricultural water withdrawals, with an associated 13 % decline in economic output. These findings highlight a nonlinear trade-off between environmental recovery and economic loss. By benchmarking extraction levels against ecological thresholds, this modeling framework promotes adaptive and equity-centered water governance in arid regions. It also provides strategic insight for long-term agricultural and industrial planning.",
+      "journal": "WATER RESOURCES AND INDUSTRY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 182,
+      "doi": "10.1016/j.jclepro.2017.03.237",
+      "title": "Agriculture and degrowth: State of the art and assessment of organic and biotech-based agriculture from a degrowth perspective",
+      "authors": "Gomiero, Tiziano",
+      "year": 2018,
+      "abstract": "Agriculture stands as the foundation of modern human societies. Any changes in social functioning should seriously consider how to guarantee people a proper supply of food, in terms of both quantity and quality. Degrowth is a movement that aims at achieving a radical change in the societal metabolism of societies, toward a more frugal, sustainable and convivial lifestyle. The movement envisages a society where concepts as sharing, conviviality, care, commons, justice could stand at its foundation, and replace the call for economic growth, which is, obviously, biophysically unsustainable. This paper aims to (1) review how agriculture has been addressed within the degrowth discourse, (2) analyse the relation between agriculture and societal metabolism and its relevance from a degrowth perspective, (3) discuss how different agricultural techniques and technologies may represent appropriate technologies (sensu Schumacher, 1973), and meet the call for conviviality (sensu Illich, 1975). The latter point focusses on a comparison between organic agriculture (OA, which bans the use of agrochemicals and Genetically Modified Organisms - CMOs) and biotech-based agriculture (BTA, reliant on CMOs). The paper points out that although many relevant socioeconomic, political and environmental issues have been addressed by degrowth scholars, agriculture is still poorly analysed. Recommendations are made with regard to studying possible alternative transition paths, by assessing their impact on society's structure and functioning. It is argued that conviviality and appropriate technology concepts are rather complex and multifaceted. Therefore, different practices might be considered convivial and appropriate under some criteria, and not under others. With regard to conviviality, organic agriculture might not fully respond to the call for autonomy. Notwithstanding claims made by GMOs supporters, BTA does neither suit the call for appropriate technology, nor represent a convivial tool under any criteria. (C) 2017 Elsevier Ltd. All rights reserved.",
+      "journal": "JOURNAL OF CLEANER PRODUCTION",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 183,
+      "doi": "10.1017/lar.2024.55",
+      "title": "Decrecimiento y agroecolog�a: La experiencia del Movimiento de Trabajadores Rurales Sin Tierra (MST) en campamentos y asentamientos rurales en el Gran Sao Paulo, Brasil",
+      "authors": "Nogueira, Aico; Sorrentino, Marcos",
+      "year": 2025,
+      "abstract": "This article examines the significance of rural social movements in the transition processes from conventional agriculture to agro-sustainable practices. Utilizing the concept of de growth, thisresearch conducts a comparative analysis of four rural units (camps/settlements) with and without the presence of the Landless Workers'Movement (MST) in Greater S & atilde;o Paulo. The study reflects onthe essential elements for agroecological transition processes within these communities by exploring the historical and constitutive data of the agricultural social practices implemented there in. By identifying the importance of political and technical training processes as the foundation for the actions undertaken by the MST in the realm of sustainability, this work analyzes the experience of the Movement's camps as loci that cultivatelandless subjectscapable of undertaking agro-sustainable actions. The article concludes with reflections on the relevance of degrowtht heories for analyzing agroecological transition processes, as well as on the significance of environmental educational measures as fundamental components of public policies aimed at constructing more egalitarian, autonomous, inclusive, and sustainable societies",
+      "journal": "LATIN AMERICAN RESEARCH REVIEW",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 184,
+      "doi": "10.1016/j.cities.2023.104259",
+      "title": "On the road to urban degrowth economics? Learning from the experience of C40 cities, doughnut cities, Transition Towns, and shrinking cities",
+      "authors": "Khmara, Yaryna; Kronenberg, Jakub",
+      "year": 2023,
+      "abstract": "Cities have special importance and the potential to serve as places for social, economic, and ecological transition experiments. They create organisations and networks to collectively address various sustainability challenges. One of the broad transformational ideas that can guide a far-reaching transition and address the key sustain-ability challenges is degrowth. We postulate that a new narrative of 'urban degrowth economics' is necessary to operationalise degrowth on a larger scale. Analysing the strategies and policies of cities that represent selected networks or phenomena through the lens of such a narrative can demonstrate which of the current approaches to urban development are the closest to degrowth values. By juxtaposing degrowth proposals with the main themes analysed in urban economics, we propose criteria for urban degrowth economics. We then apply these criteria to assess selected case study cities that represent the following networks and phenomena: C40 (Copenhagen), Transition Towns (Totnes), doughnut economics (Amsterdam), and shrinking cities (Detroit).",
+      "journal": "CITIES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 185,
+      "doi": "10.1016/j.ecolecon.2015.02.013",
+      "title": "Microeconomic degrowth: The case of Community Supported Agriculture",
+      "authors": "Bloemmen, Marjolijn; Bobulescu, Roxana; Le, Nhu Tuyen; Vitari, Claudio",
+      "year": 2015,
+      "abstract": "In this paper, we attempt to build a new microeconomic approach that could be considered as a basis of the degrowth macroeconomic view. As degrowth is a critique of the dominant macroeconomic model of the endless search for economic growth, its microeconomic foundations can be built by searching a relevant grass-root economic initiative to theorise. Our approach is based upon the case study research of a self-harvesting Community Supported Agriculture in Belgium. The mainstream microeconomic model is based on the well-known Homo economicus assumption of individual self-interest and competitive behaviour. By contrast, our model is based on a holistic approach of producers and consumers, based upon trust, cooperation and ecologically responsible behaviours. This contribution participates to the flourishing literature on degrowth in Ecological Economics. We begin by reviewing the debate on degrowth and economic behaviour. We discuss the case study and its accounting expression that departs from the capitalist profit-seeking model. We conclude by explaining the limits and challenges of our model that implements degrowth on a small scale and in a capitalist environment. (C) 2015 Elsevier B.V. All rights reserved.",
+      "journal": "ECOLOGICAL ECONOMICS",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 186,
+      "doi": "10.1094/PHYTO-97-9-1186",
+      "title": "Crop loss-related forecasting model for Sclerotinia stem rot in winter oilseed rape",
+      "authors": "Koch, S.; Dunker, S.; Kleinhenz, B.; Roehrig, M.; von Tiedemann, A.",
+      "year": 2007,
+      "abstract": "Sclerotinia stem rot (SSR) is an increasing threat to winter oilseed rape (OSR) in Germany and other European countries due to the growing area of OSR cultivation. A forecasting model was developed to provide decision support for the fungicide spray against SSR at flowering. Four weather variables-air temperature, relative humidity, rainfall, and sunshine duration-were used to calculate the microclimate in the plant canopy. From data reinvestigated in a climate chamber study, 7 to 11 degrees C and 80 to 86% relative humidity (RH) were established as minimum conditions for stem infection with ascospores and expressed as an index to discriminate infection hours (Inh). Disease incidence (DI) significantly correlated with Inh occurring post-growth stage (GS) 58 (late bud stage) (r(2) = 0.42, P :<= 0.001). Using the sum of Inh from continuous infection periods exceeding 23 h significantly improved correlation with DI (r(2) = 0.82; P <= 0.001). A parallel GS model calculates the developmental stages of OSR based on temperature in the canopy and starts the model calculation at GS 58. The novel forecasting system, SkleroPro, consists of a two-tiered approach, the first providing a regional assessment of the disease risk, which is assumed when 23 Inh have accumulated after the crop has passed GS 58. The second tier provides a field- site- specific, economy-based recommendation. Based on costs of spray, expected yield, and price of rapeseed, the number of Inh corresponding to DI at the economic damage threshold (Inh(i)) is calculated. A decision to spray is proposed when Inh : Inhi. Historical field data (1994 to 2004) were used to assess the impact of agronomic factors on SSR incidence. A 2-year crop rotation enhanced disease risk and, therefore, lowered the infection threshold in the model by a factor of 0.8, whereas in 4-year rotations, the threshold was elevated by a factor 1.3. Number of plants per square meter, nitrogen fertilization, and soil management did not have significant effects on DI. In an evaluation of SkleroPro with 76 historical (1994 to 2004) and 32 actual field experiments conducted in 2005, the percentage of economically correct decisions was 70 and 81%, respectively. Compared with the common practice of routine sprays, this corresponded to savings in fungicides of 39 and 81 % and to increases in net return for the grower of 23 and 45 epsilon/ha, respectively. This study demonstrates that, particularly in areas with abundant inoculum, the level of SSR in OSR can be predicted from conditions of stem infection during late bud or flowering with sufficient accuracy, and does not require simulation of apothecial development and ascospore dispersal. SkleroPro is the first crop- loss-related forecasting model for a Sclerotinia disease, with the potential of being widely used in agricultural practice, accessible through the Internet. Its concept, components, and implementation may be useful in developing forecasting systems for Sclerotinia diseases in other crops or climates.",
+      "journal": "PHYTOPATHOLOGY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 187,
+      "doi": "10.1007/s11625-023-01378-1",
+      "title": "Beyond global versus local: illuminating a cosmolocal framework for convivial technology development",
+      "authors": "Kostakis, Vasilis; Niaros, Vasilis; Giotitsas, Chris",
+      "year": 2023,
+      "abstract": "A reconceptualisation of technology, as a vital component of modern society cutting across all its other aspects, is required to achieve social and environmental sustainability. This paper presents a convivial technology development framework using the concept of cosmolocal production. The latter captures the dynamic of dispersed technology initiatives, which exhibit conceptualisations of living, working and making around the commons. It is a structural framework for organising production by prioritising socio-ecological well-being over corporate profits, over-production and excess consumption. From the vantage point of Tzoumakers, a cosmolocal initiative in which the authors participate, this paper offers an empirical account of its conception and evolution. We further examine its relation and cooperation with various similar interconnected places in urban and rural settings.",
+      "journal": "SUSTAINABILITY SCIENCE",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 188,
+      "doi": "10.1080/03066150.2024.2388051",
+      "title": "'A Dead Sea of Solar Panels:' solar enclosure, extractivism and the progressive degradation of the California desert",
+      "authors": "Dunlap, Alexander A.; Sovacool, Benjamin K.; Novakovic, Bojana",
+      "year": 2025,
+      "abstract": "Based on conversations with 38 interview respondents, four focus groups and participant observation, this article examines intensive solar energy development in east Riverside County, California. Focusing on the Desert Center area, it argues that environmental policy, expressed through market-imperatives and bureaucratically-centered modeling science, severely threatens ecosystems, meanwhile failing to accomplish climate change mitigation. Critical Agrarian Studies (CAS) and Environmental Justice (EJ) are brought into dialogue to explore solar extractivism in Desert Center through the Four-Es (4Es) framework: Enclosure, Exclusion, Encroachment and Entrenchment. A scientific-bureaucratic approach to sustainable development, we find, structurally disregards rural residents, desert habitats and releases more carbon into the atmosphere.",
+      "journal": "JOURNAL OF PEASANT STUDIES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 189,
+      "doi": null,
+      "title": "Ecological neo-Narodnism and the peasant economy: history and contemporary relevance",
+      "authors": "Vianna Franco, Marco P.",
+      "year": 2021,
+      "abstract": "Based on the ecological utopianism of Narodnik thinkers, this article assesses the programmatic concept of ecological neo-narodnism, as put forth by Martinez-Alier (1987), addressing (1) to what extent it conforms to the intellectual legacy of the Narodniki? (2) what are its main theoretical foundations and policy recommendations for a peasant economy in the 21st century? and (3) how it contributes to contemporary social and environmental challenges. It explores in detail the ecological economic theories which can be applied to the peasant economy according to the ideology of ecological neo-narodnism, the latter analyzed from the perspectives of the fields of political economy and political ecology. Peasant movements are addressed as the manifestation of such a worldview. Finally, the contributions of ecological neo-narodnism to overcome current social and environmental challenges are discussed and associated with economic degrowth.",
+      "journal": "JOURNAL OF POLITICAL ECOLOGY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 190,
+      "doi": "10.1285/i20356609v16i1p138",
+      "title": "THE INTERCONNECTION BETWEEN ECOLOGY AND DIRECT DEMOCRACY IN ALTERNATIVE FOOD NETWORKS",
+      "authors": "Tzekou, Eirini-Erifyli; Gritzas, Giorgos",
+      "year": 2023,
+      "abstract": "The literature of Alternative Food Networks has engaged with ecological practices as well as decision -making. Nevertheless, it usually approaches ecology and democracy in Alternative Food Networks separately or as a sum of good practices, thus neglecting their interaction. The present article proposes a holistic approach of these practices under the lens of degrowth and post-development. Ecology and democracy are at the epicenter of degrowth and post-development discourse which offer a coherent framework to study social change. Based on the data drawn from a field survey including 43 semi -structured interviews with members of 13 Alternative Food Networks and a nine-month participant observation in the city of Thessaloniki, Greece, the article studies the interplay between ecological practices and direct democratic decision-making. The study brings to the foreground the way Alternative Food Networks negotiate environmental sustainability as well as the complementarities and conflicts between their different goals and strategies. Consequently, it highlights the need for incorporating holistic discourses such as degrowth and post-development into the study of Alternative Food Networks.",
+      "journal": "PARTECIPAZIONE E CONFLITTO",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 191,
+      "doi": "10.1016/j.jclepro.2018.11.119",
+      "title": "Activities of degrowth and political change",
+      "authors": "Heikkurinen, Pasi; Lozanoska, Jana; Tosi, Pierre",
+      "year": 2019,
+      "abstract": "Hannah Arendt's three-fold conceptualization of human activity offers a useful base for understanding the necessity of degrowth and the kinds of activities required to achieve it. The article argues that the different roles of labour, work, and action should be acknowledged and scrutinized in detail to appreciate the underpinnings of contemporary over-production and over-consumption, as well as to prompt the organization of an alternative society. While following the Arendtian analysis on the origins of meaningful political change, which emphasizes the utmost importance of 'action', the article also underscores the importance of a different conception of 'labour' through physical activity, such as community supported agriculture, and 'work' through social activity such as building off-grid energy systems. The study aligns itself with Arendt's key insight that the origin of most contemporary problems relates to the disappearance of 'action', which for her is political, but also argues that the distinction between 'paid' and 'non-paid' activity has to be carefully considered in the context of degrowth. The article concludes that non-paid activities, particularly in the form of Arendtian 'action', have great potential to contribute to the degrowth movement. Demonetized activities are important for degrowth, as monetary transactions in capitalist societies based on interest and debt tend to contribute to economic growth, which is deemed ecologically unsustainable. (C) 2018 Elsevier Ltd. All rights reserved.",
+      "journal": "JOURNAL OF CLEANER PRODUCTION",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 192,
+      "doi": "10.1016/j.envsci.2025.104110",
+      "title": "Beyond green growth: Mapping sustainability pathways for rural transformations in Norway",
+      "authors": "Helseth, Elisabeth Veivag; Nordtug, Hildegunn; Skavhaug, Inga Marie; Gomez-Baggethun, Erik",
+      "year": 2025,
+      "abstract": "Competing sustainability pathways reflect different values and preferred solutions in response to the climate and environmental crisis. The recent Values Assessment by the Intergovernmental Science-Policy Platform on Biodiversity and Ecosystem Services (IPBES) states that mobilizing a diversity of sustainability-aligned values (such as care and reciprocity) are key to sustainability transformations. This paper examines the role of values and livelihood options as leverage points for rural sustainability transformations. Drawing on IPBES's analytical framework, we assess support to four different sustainability pathways in rural Norway: i) green growth, ii) degrowth, iii) earth stewardship, and iv) nature protection. Data was collected from an analysis of fifteen policy documents (N = 15) and a survey (N = 3591) distributed among local population in 12 Norwegian rural municipalities. Three main results are highlighted. First, green growth and associated values firmly dominate sustainability thinking in Norwegian policy agendas for rural development, followed by nature protection, and earth stewardship, while degrowth ideas are only marginally represented. Second, while 17.5 % of survey respondents describe profit or economic growth as key for sustainable development, one fourth (26.1 %) emphasize nature protection, sufficiency, or local production. Finally, green growth supporters emphasize instrumental values through tourism and industry, while degrowth supporters emphasize intrinsic and relational values through localized small-scale farming and resource use. Our results indicate that if Norwegian rural policy is to align with IPBES' recommendation to balance diverse values for sustainability transformations, rural policies should extend their attention beyond green growth, drawing on alternative sustainability pathways to incorporate a wider diversity of values.",
+      "journal": "ENVIRONMENTAL SCIENCE & POLICY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 193,
+      "doi": null,
+      "title": "LAND AFTER LUXURY",
+      "authors": "Lopez, Cesar",
+      "year": 2022,
+      "abstract": "Land After Luxury's speculative project explores questions of restitution and agroeconomic growth in the context of (post)colonial Puerto Rico. An apparent sovereign territory, the Caribbean island continues to be subjected to forced degrowth, austerity measures, and legacies of extraction, including leisure spaces. Inherited from the plantation and agricultural appropriation logic after the U.S. invasion in 1898, the project considers the current golf course landscapes as symbolic places of colonial representation and offers agroecological and architectural interventions to support a sovereign form of localized growth.",
+      "journal": "ARQ",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 194,
+      "doi": null,
+      "title": "The greenwashing of the Revolution: Cuba's positioning in contemporary ecosocial discourses",
+      "authors": "Thiemann, Louis",
+      "year": 2023,
+      "abstract": null,
+      "journal": "MITOS DE LA REVOLUCION CUBANA: Estancamiento y Regresion de una Utopia",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 195,
+      "doi": null,
+      "title": "Technology for degrowth Implementing digital platforms for community supported agriculture",
+      "authors": "Edwards, Ferne; Espelt, Ricard",
+      "year": 2021,
+      "abstract": null,
+      "journal": "FOOD FOR DEGROWTH: Perspectives and Practices",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 196,
+      "doi": "10.1080/00291951.2023.2225068",
+      "title": "We have been invaded: Wind energy sacrifice zones in &ANGS;fjord Municipality and their implications for Norway",
+      "authors": "Karam, Anne; Shokrgozar, Shayan",
+      "year": 2023,
+      "abstract": "Following the green growth tradition, the construction of lower carbon energy (renewable energy) infrastructures, such as wind power, has gained prominence in Norway. This has led to indigenous Saami herders confronting pastureland dispossession, some citizens fearing the industrialization of nature, and municipal councils losing formal governance power in favor of national agencies and private-sector project developers-justified by the urgency of the climate crisis. The purpose of the paper is to explore how energy infrastructures aimed at decarbonization have led to social fragmentation and ecological degradation alongside claims of economic revitalization potential in & ANGS;fjord. The authors draw upon fieldwork conducted within Saepmie (or Sapmi), the cultural region traditionally inhabited by the Sami, and investigate the Fosen Vind energy project in the & ANGS;fjord Municipality. They find that lower carbon energy infrastructures, such as wind farms, have been normalized as unavoidable, and damage to habitat and encroachment on Saami livelihoods are positioned as necessary sacrifices for the greater good of fighting the climate crisis. The authors conclude that avoiding the creation of green sacrifice zones in making low-carbon places requires a more transformative vision than the visions offered by techno-solutionism, such as degrowth.",
+      "journal": "NORSK GEOGRAFISK TIDSSKRIFT-NORWEGIAN JOURNAL OF GEOGRAPHY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 197,
+      "doi": "10.1016/j.jclepro.2011.11.057",
+      "title": "Degrowth and public health in Cuba: lessons from the past?",
+      "authors": "Borowy, Iris",
+      "year": 2013,
+      "abstract": "After the collapse of the Communist Bloc in the 19905 Cuba experienced a severe economic crisis. In its drastic reduction in fuels, its negative economic growth data due to declining production and consumption rates and in its adaptations to shrinking resources and to local and labor-intensive production modes, this so-called Special Period had elements of an experiment in degrowth. Looking at economic, social and agricultural reactions to the crisis, this paper identifies a consistent commitment to social services, a shift in agricultural methods and a high level of social capital as main reasons for this outcome. Balancing this result with negative implications of the crisis, notably the lack of political freedom and of long-term sustainability, the paper seeks to draw lessons for future degrowth scenarios. (C) 2011 Elsevier Ltd. All rights reserved.",
+      "journal": "JOURNAL OF CLEANER PRODUCTION",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 198,
+      "doi": null,
+      "title": "AQUACULTURE AND FISHERIES CRISIS WITHIN THE GLOBAL CRISIS",
+      "authors": "Perdikaris, Costas; Paschos, Ioannis",
+      "year": 2011,
+      "abstract": "The present essay attempts to address the observed complex crisis of aquaculture and fisheries sectors within the broader context of global crisis, using examples of significant negative effects on natural and social environment. At the same time the underlying causes of the sectors' crisis are viewed under the lens of metabolic rift theory applied to shrimp farming, glass eel trade, and tuna fishing and farming for sushi. Current crisis in the Greek aquaculture sector is briefly reviewed as a representative example of aquaculture developmental process in western societies, followed by an attempt to address the emergence of organic aquaculture schemes. Finally, eco-sound directions and polices in aquaculture development are briefly discussed, in order to minimize environmental effects, social inequity and partially restore existing metabolic rifts.",
+      "journal": "INTERCIENCIA",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 199,
+      "doi": "10.1016/j.jclepro.2024.143777",
+      "title": "Modelling what matters: How do current models handle environmental limits and social outcomes?",
+      "authors": "Van Eynde, Rob; Greenford, Daniel Horen; O'Neill, Daniel W.; Demaria, Federico",
+      "year": 2024,
+      "abstract": "Models that represent the economy, society, and environment are critical macroeconomic policy tools. However, economic output as measured by Gross Domestic Product (GDP) is increasingly being seen as an unreliable and undesirable economic indicator and policy goal. Instead, multiple indicators of environmental impacts and social outcomes are needed to make decisions about sustainable development. Drawing on the Doughnut of social and planetary boundaries, and the Sustainable Development Goals, we analyse 50 models to assess the state of the art in modelling the environment, society, and economy. We categorise models according to their economic foundation and modelling approach, assess their coverage of 15 environmental and 21 social indicators, and identify feedbacks between different model parts. We further construct a targeted sample of 15 models that represents the diversity in modelling approaches and indicator coverage, and use this sample to investigate how environmental and social indicators are linked to macroeconomic drivers. For the environment, indicator coverage is best for climate change, energy use, and land conversion. Within current models, environmental impact is largely driven by GDP and agricultural production. For society, coverage is best for jobs, income (wages and inequality), and productivity. Within current models, social outcomes are largely driven by income per capita, government spending, and governance. Models rarely contain feedbacks from the environment and society to the economy, and few include any biophysical limits. The current focus on monetary flows limits understanding of the interconnections between environmental, social, and economic systems. We argue that modellers should rely less on economic variables as determinants of social and environmental outcomes. Specific provisioning systems could be modelled in more detail to allow models to explore growth-agnostic ways of achieving a good life for all within environmental limits.",
+      "journal": "JOURNAL OF CLEANER PRODUCTION",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 200,
+      "doi": "10.1177/22779760221145232",
+      "title": "Theories of Political Ecology: Monopoly Capital Against People and the Planet",
+      "authors": "Ajl, Max",
+      "year": 2023,
+      "abstract": "This article engages with and critiques dominant theories of political ecology. It takes the theory of ecologically unequal exchange (EUE) as the framework of critique. It assesses the claims of fossil capitalism, eco-modernism, extractivism, and degrowth, as well as the theories of post-development. It finds that with the exception of degrowth, none of them take imperialism or the global history of accumulation sufficiently seriously, and either displace transformative obligations wholly onto the South or adopt a framework which centers merely the agency of the Northern working class or a class-blind movement of movements. Instead, it proposes modifications of EUE based on the polarized nature of accumulation and waste production and distribution, and neocolonialism. It uses that framework to identify the antisystemic role of nature-reliant peripheral semi-proletarian classes, and from there reopens the debate on appropriate-scale industrialization along with ecological transformations of agriculture as paths to development in the twenty-first century.",
+      "journal": "AGRARIAN SOUTH-JOURNAL OF POLITICAL ECONOMY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 201,
+      "doi": "10.5433/1679-0359.2018v39n6p2659",
+      "title": "Method to generate growth and degrowth models obtained from differential equations applied to agrarian sciences",
+      "authors": "Pinto dos Santos, Andre Luiz; Moreira, Guilherme Rocha; Ramos de Brito, Cicero Carlos; Gomes-Silva, Frank; Leonardo da Costa, Maria Lindomarcia; Pimentel, Patricia Guimaraes; Cunha Filho, Moacyr; Mizubuti, Ivone Yurika",
+      "year": 2018,
+      "abstract": "This study aims to propose a method to generate growth and degrowth models using differential equations as well as to present a model based on the method proposed, compare it with the classic non-linear mathematical models Logistic, Von Bertalanffy, Brody, Gompertz, and Richards, and identify the one that best represents the mean growth curve. To that end, data on Undefined Breed (UB) goats and Santa Ines sheep from the works of Cavalcante et al. (2013) and Sarmento et al. (2006a), respectively, were used. Goodness-of-fit was measured using residual mean squares (RMS), Akaike information criterion (AIC), Bayesian information criterion (BIC), mean absolute deviation (MAD), and adjusted coefficient of determination (R-a(2)) . The models' parameters ( alpha, weight at adulthood; beta, an integration constant; y, shape parameter with no biological interpretation; k, maturation rate; and m, inflection point) wen estimated by the least squares method using Levenberg-Marquardt algorithm on the software IBM SPSS Statistics 1.0. It was observed that the proposed model was superior to the others to study the growth curves of goats and sheep according to the methodology and conditions under which the present study was carried out.",
+      "journal": "SEMINA-CIENCIAS AGRARIAS",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 202,
+      "doi": null,
+      "title": "DEGROWTH: A DEFENCE",
+      "authors": "Burton, Mark; Somerville, Peter",
+      "year": 2019,
+      "abstract": "Counterblast to Robert Pollin's programme in NLR 112 for a green-growth new deal, arguing that a radical reduction in greenhouse-gas emissions requires a smaller global economy. Proposals for a drastic overhaul of production, construction, transportation and agricultural practices.",
+      "journal": "NEW LEFT REVIEW",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 203,
+      "doi": "10.3390/philosophies7060122",
+      "title": "Permacinema",
+      "authors": "Pick, Anat; Dymond, Chris",
+      "year": 2022,
+      "abstract": "This article charts the contiguity of farming and film, blending permaculture and cinema to advance a modality of sustainable film theory and practice we call permacinema. As an alternative approach to looking and labour, permaculture exhibits a suite of cinematic concerns, and offers a model for cinematic creativity that is environmentally accountable and sensitive to multispecies entanglements. Through the peaceable gestures of cultivation and restraint, permacinema proposes an ecologically attentive philosophy of moving images in accordance with permaculture's three ethics: care of earth, care of people, and fair share. We focus on work by Indigenous artists in which plants are encountered not only as raw material or as aesthetic resource but as ingenious agents and insightful teachers whose pedagogical and creative inputs are welcomed into the filmmaking process. By integrating Indigenous epistemologies and cosmologies we hope to situate permacinema in the wider project of cinema's decolonization and rewilding.",
+      "journal": "PHILOSOPHIES",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 204,
+      "doi": "10.1016/j.jece.2016.12.040",
+      "title": "Microalgae growth in polluted effluents from the dairy industry for biomass production and phytoremediation",
+      "authors": "Ignacio Labbe, Jose; Luis Ramos-Suarez, Juan; Hernandez-Perez, Alexis; Baeza, Andrea; Hansen, Felipe",
+      "year": 2017,
+      "abstract": "A link can be established in both the dairy and microalgae industries through the recycling of nutrients from dairy effluents (DE) in order to cultivate microalgae, using biomass on the farm or for commercial endeavors. This study assesses the development of Chlorella and Scenedesmus mixed cultures (CMC and SMC) in dairy farms using four different DE as culture media under ambient and laboratory conditions. Viability of the cultures for scaling up was determined based on biomass growth characteristics. CMC and SMC were able to grow in DE. Growth pattern was mainly affected by the type of effluent used, with almost no influence from culture conditions. CMC grew satisfactorily in effluents with high organic and ammonium loads such as cattle standing yard effluents (CSYE), reaching cell concentrations of 1.70 x 10(8) and 1.67 x 10(8) cel ml x 1 outdoors and indoors, respectively. Contrarily, SMC grew better on effluents with high chemical and detergent loads such as milking parlor effluents (MPE), reaching cell concentrations of 3.20 x 10(7) and 5.61 x 10(7) cel ml x 1 outdoors and indoors, respectively. Despite microalgal growth, there is a need of advance analysis for determining precisely nutrient reduction, since electrical conductivity could not be established as a remediation efficiency indicator. Overall, results show that there is a potential to treat DE through microalgae culture. (C) 2016 Elsevier Ltd. All rights reserved.",
+      "journal": "JOURNAL OF ENVIRONMENTAL CHEMICAL ENGINEERING",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 205,
+      "doi": "10.3389/frsus.2022.829848",
+      "title": "Being in the World Locally: Degrowth Business, Critical Realism, and Humanistic Geography",
+      "authors": "Nesterova, Iana",
+      "year": 2022,
+      "abstract": "It has been argued that to achieve a genuinely sustainable society, our mode of being in the world needs to change. Understanding macro visions such as the desirable size of our economies remains essential, but concrete ways of being in the world which unite such aspects of our existence as the self, being with others (humans and non-humans) and being in and with nature deserve a much closer attention. Hence, I propose focusing our attention on being once again. But rather than contemplating being as an abstract philosophical category, this paper looks at being in the world in this dual sense: we are part of the cosmos, of the web of existence and at the same time we are in the world locally, in concrete places and locations characterized by particular cultural attributes, political-economic systems, climate and landscape. This nature of being applies to individual humans and human organizations. This paper focuses specifically on business as one type of organizations. I employ the concept of degrowth business, the philosophy of critical realism and humanistic geography as lenses to enhance and deepen our understanding of what it could mean and look like for a business to be in the world locally and more sustainably. To understand what it could mean and look like in reality, I offer a case of a firm from Northern Sweden specializing in vertical hydroponic agriculture.",
+      "journal": "FRONTIERS IN SUSTAINABILITY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 206,
+      "doi": "10.1016/j.jclepro.2017.02.196",
+      "title": "Are we entering the age of involuntary degrowth? Promethean technologies and declining returns of innovation",
+      "authors": "Bonaiuti, Mauro",
+      "year": 2018,
+      "abstract": "Any reflections on an eventual transition towards a degrowth society have to take into account the current crisis in the dominant system and question whether the latter will be able to grow again or not. In order for the latter to happen, the role played by technological innovation is crucial. This paper starts by reconsidering Georgescu-Roegen's definition of Promethean Techniques and Tainter's principle of Declining Marginal Returns, with the aim of providing - within the common framework of the theory of complex systems - a sound theoretical basis for the analysis of the rise and fall of complex societies. The main purpose is to verify whether, after the last Promethean revolution, a Great Wave emerged or not. The second part of the paper presents an initial investigation into this hypothesis, using Total Factor Productivity growth as an indicator of (marginal) returns on innovation (1750-2015). Despite the limitations implicit in the use of this indicator, data show three cycles of innovation, corresponding to the first, second and third industrial revolutions, but of different magnitude and duration. In particular, the whole cycle that began with the first industrial revolution in England around 1750, reached a peak in the U.S. in the nineteen-thirties and later declined, following a trend that basically confirms the Great Wave hypothesis. Even recent innovations resulting from the ICT revolution, however considerable, do not seem capable of counteracting this long-term trend. Data on returns on innovation seem, therefore, to be coherent with evidence provided by research in other fields (energy, mineral resources, agriculture, health, education and scientific research), showing that advanced capitalist societies have entered a phase of declining marginal returns - or involuntary degrowth - with possible major effects on the system's capacity to maintain its present institutional framework. (C) 2017 Elsevier Ltd. All rights reserved.",
+      "journal": "JOURNAL OF CLEANER PRODUCTION",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 207,
+      "doi": "10.21273/HORTTECH.15.2.0261",
+      "title": "Efficacy and selectivity of promising herbicides for common groundsel control in newly established strawberry",
+      "authors": "Figueroa, R; Doohan, D; Cardina, J",
+      "year": 2005,
+      "abstract": "Common groundsel (Senecio vulgaris) is an increasingly important weed in strawberries (Fragaria x ananassa), a crop in which open space within and between rows is susceptible to infestations. Cultivation, hand hoeing, and registered herbicide are only partially effective in controlling common groundsel, and tolerance or resistance to herbicides is common in this species. Field and greenhouse studies were conducted to identify and select herbicides for controlling common groundsel in newly planted strawberries. Herbicides applied to strawberries within 1 week after planting in 2000 were: terbacil and simazine alone and tank mixed with napropamide; pendimethalin, dimethenamid, metolachlor, ethofumesate and sulfentrazone. Based on selectivity and efficacy observed in this preliminary experiment, sulfentrazone and flumiclorac were selected for further evaluation in 2001 and 2002. Strawberry tolerance of sulfentrazone and flumiclorac 1, 3, 6, and 18 weeks after application (WAA) was similar to that of the registered herbicides terbacil and napropamide, but injury was greater than in hand weeded plots. Plants sprayed with 300 g(.)ha(-1) (4.3 oz/acre) sulfentrazone produced yields similar to terbacil treated plants, but with less plant stunting. Tolerance of newly planted 'Allstar' and 'Jewel' was affected by the interaction of soil pH and sulfentrazone rate. Plant stunting 3 WAA increased with sulfentrazone rate, reaching 68 and 61% in 'Allstar' and 'Jewel', respectively, with the highest rate [400 g(.)ha(-1) (5.7 oz/acre)] and high soil pH (7). 'Allstar' grown in low pH (5) and treated with sulfentrazone (400 g(.)ha(-1)) showed only 8% stunting, whereas 'Jewel' was not stunted 3 WAA at the same rate and pH. Both cultivars recovered (50% less stunting) from the severe injury observed when sulfentrazone was applied to high pH soils. However, at low pH both cultivars were stunted more at 6 WAA than at 3 WAA. Plant diameter for both cultivars was 25% higher when they were grown in the lower soil pH. Fruit yield was not affected by the sulfentrazone rates evaluated (0 to 400 g(.)ha(-1)). Sulfentrazone was active at four stages of common groundsel growth: preemergence (PRE), cotyledon (COT), early post (EPOST) seedlings at the four-leaf stage, and late post (LPOST) seedlings at the 10-leaf stage. The calculated 50% growth reduction (GR(50)) value for PRE and COT stages was 50 g(.)ha(-1) (0.7 oz/acre), whereas the GR(50) for EPOST and LPOST stages was 100 g(.)ha(-1) (1.4 oz/acre). Sulfentrazone controlled common groundsel when applied PRE and COT, but at EPOST and LPOST stages sulfentrazone did not provide complete control, although plant height was reduced 80% to 90% compared to untreated plants. Results indicated that common groundsel is controlled in the field with 150 and 300 g(.)ha(-1) (2.1 and 4.3 oz/acre) of sulfentrazone applied before seedling emergence. The least strawberry injury occurred when sulfentrazone was applied immediately after transplanting at 150 and 300 g(.)ha(-1), although crop tolerance was reduced under conditions of high soil pH (> 6.5) and varied with cultivar.",
+      "journal": "HORTTECHNOLOGY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 208,
+      "doi": "10.1002/sea2.12107",
+      "title": "Production for consumption: Prosumer, citizen-consumer, and ethical consumption in a postgrowth context",
+      "authors": "Kosnik, Elisabeth",
+      "year": 2018,
+      "abstract": "Do-it-yourself and grow-it-yourself continue as popular trends throughout industrialized urban market societies; from community gardens to community-supported agriculture, people engage in various schemes of self-provisioning and alternative economies. Some go beyond growing fruits and vegetables for immediate consumption and opt for a rural lifestyle centered on voluntary self-provisioning-people who choose a lifestyle that allows them to eat independently from the food industry. This article is based on ethnographic research on lifestyle subsistence farmers in central Europe and New Zealand. In this article, I investigate practices of self-provisioning and diverse economies, drawing on Alvin Toffler's concept of the prosumer to investigate what production for consumption might mean in regard to discourses on ethical consumption, social distinction, and the citizen-consumer within the context of a postgrowth society.",
+      "journal": "ECONOMIC ANTHROPOLOGY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 209,
+      "doi": "10.1016/j.scitotenv.2021.147481",
+      "title": "Sustainability and sustainable development: A review of principles and definitions",
+      "authors": "Ruggerio, Carlos Alberto",
+      "year": 2021,
+      "abstract": "The concepts of sustainability and sustainable development have acquired great relevance in scientific research about environmental issues, policies linked to environmental management, and industrial and agricultural production, among others. Although these two concepts are frequently used as synonyms, they are immersed in debates regarding their meaning and their possibilities for application to real systems. This review analyzes the main theoretical definitions of both concepts, together with their potentials and limitations, emphasizing the differences between their meanings. A bibliographic search was carried out in the Web of Science database and other sources from official organizations of international relevance and authors referenced by them. The works providing substantive definitions of sustainability and sustainable development from a complexity theory perspective were selected for discussion throughout the article. The main results showed a strong criticism of the concept of sustainable development due to its imprecise definition, the emergence of the concept of sustainability in the debate of the 1990s and its consolidation in certain fields of knowledge, and the emergence of new alternatives to sustainable development such as degrowth and buen vivir. The results also show the potential of the concept of sustainability as a still-developing framework for scientific research and environmental management. (c) 2021 Elsevier B.V. All rights reserved.",
+      "journal": "SCIENCE OF THE TOTAL ENVIRONMENT",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 210,
+      "doi": "10.3390/su12229521",
+      "title": "From a Three-Legged Stool to a Three-Dimensional World: Integrating Rights, Gender and Indigenous Knowledge into Sustainability Practice and Law",
+      "authors": "DiPrete Brown, Lori; Atapattu, Sumudu; Stull, Valerie Jo; Calderon, Claudia Irene; Huambachano, Mariaelena; Houenou, Marie Josee Paula; Snider, Anna; Monzon, Andrea",
+      "year": 2020,
+      "abstract": "Sustainable Development has come a long way since the World Commission on Environment and Development first popularized the term in 1987. Virtually everyone is now familiar with the term Sustainable Development, from states to multinational corporations, and from affluent communities in the Global North to impoverished communities in the Global South. It received a new lease of life in 2015 when the United Nations General Assembly adopted Agenda 2030 and Sustainable Development Goals (SDGs). It is recognized that sustainable development requires an inter-disciplinary, multi-level, and bottom-up approach, and that this ideal is easy to state but difficult to operationalize. Pursuant to deliberations at an international workshop at the University of Wisconsin-Madison, which aimed at fostering the exchange of ideas among diverse experts and developing solutions for effective inclusion of women and youth in climate change response strategies, we propose an innovative, practical three-dimensional model that enhances sustainability theory and practice with cross-cutting integration of human rights, gender equity, and Indigenous and local knowledge. We evaluate the utility of the model in two ways: First, we analyze how the model informs current approaches to environmental sustainability and human wellbeing including the SDGs, agroecology, de-growth principles, and planetary health metrics. Then, we explore the feasibility and added value of the approach through seven case studies from Guatemala, Sri Lanka, Malawi, Peru, Cote D'Ivoire, and Aotearoa-New Zealand. We conclude that the proposed model is congruent with current theory and practice. It builds on existing principles by identifying and addressing gaps. It enables practical action in a variety of settings and fosters a more integrated approach to sustainable wellbeing for humanity and our earth. We recommend continued development of this theoretical framework and related guidelines for program design, implementation and evaluation.",
+      "journal": "SUSTAINABILITY",
+      "exclusion_reason_hierarchy": null
+    },
+    {
+      "study_id": 211,
+      "doi": "10.5424/sjar/2021193-17931",
+      "title": "Assessing knowledge and engagement on sustainable development goals: exploratory research in the agri-food departments of Ibero-American universities",
+      "authors": "Guerrero, Ana; Gomez-Quintero, Juan D.",
+      "year": 2021,
+      "abstract": "Aim of study: To offer an overview of current knowledge and civic engagement in the implementation of sustainable development goals (SDGs) applied to agriculture sector.Area of study: Members of university communities from agri-food field departments at universities from three Ibero-American countries (Spain, Colombia and Brazil).Material and methods: 631 on line surveys from different Ibero-American faculties of the area. Descriptive, quantitative and qualitative analysis was performed. The level of knowledge and engagement of SDGs related to agriculture sector as Goal 2 (Zero Hunger) and 12 (Responsible Consumption and Production) were investigated.Main results: The level of knowledge about the SDG Agenda, the priority rating for the implementation of each goal and the level of engagement varied significantly between countries. While Spain obtained the highest values in most of the variables relating to knowledge of the SDGs, followed by Brazil, Colombia showed the highest levels of engagement and willingness to apply specific actions in the agri-food sector to promote the implementation of the SDGs.Research highlights: The knowledge and engagement must be improved if we are to achieve the SDGs, and education and research play a vital role in bridging the SDG implementation gap in agri-food field. In the area the best-known SDG strategies are those related to sustainable farming systems and the least-known are the concept of 'degrowth' as a possible efficient strategy, 'permaculture' and 'local production and consumption'. Big differences exist between countries in terms of public knowledge and engagement with SDGs.",
+      "journal": "SPANISH JOURNAL OF AGRICULTURAL RESEARCH",
+      "exclusion_reason_hierarchy": null
+    }
+  ]
+}
