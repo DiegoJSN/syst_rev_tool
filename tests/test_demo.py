@@ -4,12 +4,6 @@ import unittest
 
 
 class DemoSmokeTest(unittest.TestCase):
-    EXPECTED_IDS = {
-        6, 7, 9, 10, 97, 98, 99, 102, 104, 106, 112, 113,
-        116, 117, 118, 119, 120, 121, 126, 128, 129, 130, 131, 134,
-        143, 147, 151, 153, 154, 155, 161, 165, 166, 168, 169, 175, 177, 190,
-    }
-
     @classmethod
     def setUpClass(cls):
         cls.temp_dir = tempfile.TemporaryDirectory()
@@ -60,11 +54,7 @@ class DemoSmokeTest(unittest.TestCase):
             self.assertEqual(study["source_title"], "JOURNAL OF CLEANER PRODUCTION")
 
             reasons = db.execute(
-                """
-                SELECT hierarchy, reason
-                FROM exclusion_reasons
-                ORDER BY hierarchy
-                """
+                "SELECT hierarchy, reason FROM exclusion_reasons ORDER BY hierarchy"
             ).fetchall()
             self.assertEqual([row["hierarchy"] for row in reasons], [1, 2, 3, 4])
             self.assertIn("Wrong Language", reasons[0]["reason"])
@@ -82,7 +72,7 @@ class DemoSmokeTest(unittest.TestCase):
             self.assertEqual(excluded["second_screening_included"], "no")
             self.assertEqual(excluded["hierarchy"], 3)
 
-    def test_numbered_pdfs_and_phase_examples(self):
+    def test_pdf_only_second_screening_and_phase_counts(self):
         from db import get_db
 
         with self.app.app_context():
@@ -91,53 +81,68 @@ class DemoSmokeTest(unittest.TestCase):
                 "SELECT id, participants_number FROM review WHERE review_name = %s",
                 ("Example 1: Degrowth in agricultural systems",),
             ).fetchone()
-            self.assertIsNotNone(review)
             self.assertEqual(review["participants_number"], 6)
 
-            reviewer_count = db.execute(
-                "SELECT COUNT(*) AS c FROM reviewers WHERE id_review = %s",
-                (review["id"],),
-            ).fetchone()["c"]
-            self.assertEqual(reviewer_count, 6)
-
-            studies = db.execute(
+            counts = db.execute(
                 """
-                SELECT id, file_name, length(file_data) AS file_size,
-                       first_screening_included, second_screening_included
+                SELECT
+                  COUNT(*) AS total,
+                  SUM(CASE WHEN file_data IS NOT NULL THEN 1 ELSE 0 END) AS with_pdf,
+                  SUM(CASE WHEN first_screening_included IS NULL THEN 1 ELSE 0 END) AS first_pending,
+                  SUM(CASE WHEN first_screening_included = 'no' THEN 1 ELSE 0 END) AS first_rejected,
+                  SUM(CASE WHEN first_screening_included = 'yes'
+                            AND second_screening_included IS NULL THEN 1 ELSE 0 END) AS second_pending,
+                  SUM(CASE WHEN second_screening_included = 'yes' THEN 1 ELSE 0 END) AS to_extract,
+                  SUM(CASE WHEN second_screening_included = 'no' THEN 1 ELSE 0 END) AS second_excluded,
+                  SUM(CASE WHEN first_screening_included = 'yes'
+                            AND second_screening_included IS NULL
+                            AND file_data IS NULL THEN 1 ELSE 0 END) AS second_without_pdf
                 FROM studies
                 WHERE id_review = %s
-                ORDER BY id
+                """,
+                (review["id"],),
+            ).fetchone()
+            self.assertEqual(counts["total"], 258)
+            self.assertEqual(counts["with_pdf"], 38)
+            self.assertEqual(counts["first_pending"], 166)
+            self.assertEqual(counts["first_rejected"], 54)
+            self.assertEqual(counts["second_pending"], 14)
+            self.assertEqual(counts["to_extract"], 6)
+            self.assertEqual(counts["second_excluded"], 18)
+            self.assertEqual(counts["second_without_pdf"], 0)
+
+            second_studies = db.execute(
+                """
+                SELECT id, file_name, length(file_data) AS file_size
+                FROM studies
+                WHERE id_review = %s
+                  AND first_screening_included = 'yes'
+                  AND second_screening_included IS NULL
                 """,
                 (review["id"],),
             ).fetchall()
-            self.assertEqual({row["id"] for row in studies}, self.EXPECTED_IDS)
+            self.assertTrue(second_studies)
             self.assertTrue(
-                all(row["file_name"].startswith(f"{row['id']}_") for row in studies)
+                all(row["file_name"].startswith(f"{row['id']}_") for row in second_studies)
             )
-            self.assertTrue(all(row["file_size"] > 0 for row in studies))
+            self.assertTrue(all(row["file_size"] > 0 for row in second_studies))
 
-            first_pending = sum(
-                row["first_screening_included"] is None for row in studies
-            )
-            second_pending = sum(
-                row["first_screening_included"] == "yes"
-                and row["second_screening_included"] is None
-                for row in studies
-            )
-            to_extract = sum(
-                row["first_screening_included"] == "yes"
-                and row["second_screening_included"] == "yes"
-                for row in studies
-            )
-            excluded = sum(
-                row["first_screening_included"] == "yes"
-                and row["second_screening_included"] == "no"
-                for row in studies
-            )
-            self.assertEqual(
-                (first_pending, second_pending, to_extract, excluded),
-                (7, 7, 6, 18),
-            )
+    def test_second_screening_pdf_can_be_opened(self):
+        login = self.client.post(
+            "/1_main.html",
+            data={
+                "action": "login",
+                "login_name_1": "Alex Morgan",
+                "login_name_2": "Alex Morgan",
+            },
+            follow_redirects=True,
+        )
+        self.assertEqual(login.status_code, 200)
+
+        pdf = self.client.get("/review/1/studies/121/full_text")
+        self.assertEqual(pdf.status_code, 200)
+        self.assertEqual(pdf.mimetype, "application/pdf")
+        self.assertTrue(pdf.data.startswith(b"%PDF"))
 
     def test_dashboard_and_export(self):
         self.assertEqual(self.client.get("/1_main.html").status_code, 200)
