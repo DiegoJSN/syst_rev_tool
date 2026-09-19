@@ -1,0 +1,25 @@
+{
+  "source": "20260616_exclusion_reasons.xlsx",
+  "exclusion_reasons": [
+    {
+      "hierarchy": 1,
+      "reason": "Wrong Language: Full text not in English, Spanish, Italian or Norwegian",
+      "is_active": true
+    },
+    {
+      "hierarchy": 2,
+      "reason": "Wrong Document Type: Grey literature, reports, dissertations, commentaries / A review or meta-analysis",
+      "is_active": true
+    },
+    {
+      "hierarchy": 3,
+      "reason": "Wrong Scope: Not related to agriculture/farming/agri-food systems/food chain",
+      "is_active": true
+    },
+    {
+      "hierarchy": 4,
+      "reason": "Wrong Conceptual focus: No degrowth framing, Studies on economic growth or sustainability without any degrowth/postgrowth framing / Degrowth term used differently: Studies using degrowth concepts with a different meaning (e.g., degrowth of animal metabolism or body weight)",
+      "is_active": true
+    }
+  ]
+}

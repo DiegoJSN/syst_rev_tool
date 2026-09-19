@@ -9,8 +9,9 @@ call venv\Scripts\activate
 pip install -r requirements.txt
 
 if not exist ".env" (
-  echo DATABASE_URL=postgresql://review_user:TU_PASSWORD@100.104.194.28:5432/systrev_db> .env
-  echo SECRET_KEY=change-me>> .env
+  echo DATABASE_URL=postgresql://review_user:CHANGE_ME@127.0.0.1:5432/systrev_db> .env
+  echo SECRET_KEY=replace-with-a-long-random-value>> .env
+  echo DEMO_MODE=false>> .env
 )
 
 echo.

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: syst-rev-tool-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: DATABASE_URL
+        value: sqlite:////tmp/syst-rev-demo.db
+      - key: SECRET_KEY
+        generateValue: true

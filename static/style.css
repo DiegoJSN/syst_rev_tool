@@ -11,3 +11,17 @@ body { background: #f6f7fb; }
 .mini-stat .value { font-size: 18px; font-weight: 700; }
 .row-yes { background: rgba(25, 135, 84, 0.08) !important; }
 .row-no { background: rgba(220, 53, 69, 0.08) !important; }
+.demo-banner {
+  align-items: center;
+  background: #132a44;
+  color: #fff;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: .65rem 1rem;
+  text-align: center;
+}
+.demo-banner span { color: #dbeafe; font-size: .9rem; }
+@media (max-width: 640px) {
+  .demo-banner { align-items: flex-start; flex-direction: column; gap: .15rem; }
+}

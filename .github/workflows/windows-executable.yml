@@ -1,0 +1,72 @@
+name: Build Windows executable
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag that will receive the executable"
+        required: true
+        default: "v1.0.5"
+  push:
+    tags:
+      - "demo-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Build executable
+        shell: powershell
+        run: .\build_executable.ps1
+      - name: Smoke test packaged application
+        shell: powershell
+        run: |
+          $exe = ".\dist\SystRevTool-Demo\SystRevTool-Demo.exe"
+          $process = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
+          try {
+            $ready = $false
+            1..30 | ForEach-Object {
+              Start-Sleep -Seconds 1
+              try {
+                $response = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:5000/healthz
+                if ($response.StatusCode -eq 200) { $ready = $true }
+              } catch {}
+              if ($ready) { return }
+            }
+            if (-not $ready) { throw "Packaged application did not become healthy." }
+          } finally {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+          }
+      - name: Package and checksum
+        shell: powershell
+        run: |
+          Set-Location dist
+          Compress-Archive -Path "SystRevTool-Demo" -DestinationPath "SystRevTool-Demo-Windows.zip"
+          (Get-FileHash "SystRevTool-Demo-Windows.zip" -Algorithm SHA256).Hash.ToLower() |
+            Set-Content "SystRevTool-Demo-Windows.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SystRevTool-Demo-Windows
+          path: |
+            dist/SystRevTool-Demo-Windows.zip
+            dist/SystRevTool-Demo-Windows.zip.sha256
+          if-no-files-found: error
+
+      - name: Attach executable to release
+        if: startsWith(github.ref, 'refs/tags/demo-v') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          files: |
+            dist/SystRevTool-Demo-Windows.zip
+            dist/SystRevTool-Demo-Windows.zip.sha256
+          generate_release_notes: false
+

@@ -1,0 +1,16 @@
+.git
+.env*
+.venv*
+build
+dist
+*.spec
+venv
+__pycache__
+*.pyc
+instance
+uploads
+test
+tests
+images
+Instructions_for_reviewers_*
+

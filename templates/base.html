@@ -10,6 +10,15 @@
   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 </head>
 <body>
+  {% if demo_mode %}
+  <div class="demo-banner">
+    <strong>Portfolio demo</strong>
+    <span>{% block demo_banner_message %}Fictional sample data · choose a participant to try the screening workflow.{% endblock %}</span>
+    <form method="post" action="{{ url_for('demo_reset') }}" class="m-0">
+      <button class="btn btn-sm btn-outline-light" type="submit">Reset demo</button>
+    </form>
+  </div>
+  {% endif %}
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand" href="{{ url_for('home') }}">Review Tool</a>
@@ -43,3 +52,4 @@
   {% block scripts %}{% endblock %}
 </body>
 </html>
+

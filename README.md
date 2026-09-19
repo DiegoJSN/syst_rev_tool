@@ -1,288 +1,313 @@
-# SERVER SETUP: Instructions for the server admin
+# SystRev Tool
 
-Server setup guide (PostgreSQL + Tailscale + Python app)
+> **Portfolio / Demo version**  
+> A collaborative web application for managing systematic literature reviews, developed through specification-driven AI coding.
 
-## Quick start
+SystRev Tool supports the main workflow of a systematic review, from bibliographic import and duplicate handling to multi-reviewer screening, conflict resolution, full-text management, exclusion criteria, progress tracking, and Excel export.
 
-This guide is for the **server machine** that will host:
-- The **PostgreSQL database** (on port 5432)
-- The **Python web app** (runs on port 5000 locally)
-- **Tailscale Serve**, so reviewers can access the app in their browser over Tailscale
+**The application code for this project was generated entirely using AI.**
 
-## Before you start (important)
-- Use a machine that can stay **powered on** and **connected to the internet**.
-- Disable sleep/hibernation on the server (otherwise the app becomes unreachable).
-  - Windows: Settings → System → Power & battery → Screen and sleep → set to **Never**.
-- Have **admin rights** on the server.
+The goal of this project is to demonstrate the ability to **design a software system, translate domain knowledge into precise technical specifications, and use AI effectively to turn those specifications into a working product**.
 
----
+## Demo preview
 
-## 1) Install PostgreSQL and create the database
+![SystRev Tool demo](images/systrev-demo.gif)
 
-1. Download and install PostgreSQL
-    - [https://www.postgresql.org/download/](https://www.postgresql.org/download/)
-    
-2. During installation, note these settings:
-    - Port: **5432**
-    - Set a strong password for the ``postgres`` superuser (you will need this later)
-    - Install pgAdmin 4 (usually selected by default)
+## Try the demo
 
----
+The fastest way to test SystRev Tool on Windows:
 
-## 2) Create the database user + database
->**Note: If you are restoring an existing database, edit and run ``server_restore.bat`` first and then jump to the next step "3) Allow PostgreSQL connections from your Tailscale network"**
+1. Open the [latest release](https://github.com/DiegoJSN/syst_rev_tool/releases/latest).
+2. Under **Assets**, download `SystRevTool-Demo-Windows.zip`.
+3. Extract the ZIP file.
+4. Run `SystRevTool-Demo.exe`.
 
-After the installation, create:
-- A dedicated database user (for example: `review_user`)
-- A database owned by that user (for example: `systrev_db`)
+No Python, PostgreSQL, Docker, Tailscale, passwords, or API keys are required.
 
-Two different options for doing this:
+For Python and Docker options, see [Running the demo](#running-the-demo).
 
-### Option A: Using the terminal (`psql`)
-1. Open a terminal and connect as the `postgres` superuser:
+## Project purpose
+
+The application was originally conceived to support the specific needs of a real systematic review project.
+
+The goal was to replace fragmented manual processes with a centralized workflow in which several reviewers could work on the same review, record independent decisions, identify disagreements, resolve conflicts, manage exclusion reasons, attach full-text PDFs, and export the resulting data.
+
+This `demo` branch was prepared specifically for portfolio use. It contains fictional data and a simplified local database so the main workflow can be tested without access to the private production infrastructure.
+
+## How this project was built
+
+**The application code for this project was generated entirely using AI.**
+
+My role was to define and direct the system rather than manually write the application code. I designed the concept, requirements, workflows, relational data structure, business rules, interface behavior, and logical processes, and then guided the AI through their implementation, validation, correction, and refinement.
+
+The project therefore demonstrates my ability to translate domain knowledge into precise technical specifications that an AI coding system can implement effectively.
+
+My previous experience with **relational databases** and **systematic review workflows** was central to this process. It allowed me to reason in advance about how the backend should work, how the entities should relate to each other, how decisions should be stored and consolidated, and how the different review stages should interact.
+
+This made it possible to provide the AI with a clear structural model from the beginning and reduce unnecessary trial-and-error during development.
+
+### My contribution
+
+- System conceptualization and requirements definition
+- Systematic review workflow modeling
+- Relational database and data relationship design
+- Backend logic and business-rule definition
+- Multi-reviewer screening and consensus logic
+- Conflict-detection and conflict-resolution workflow design
+- Definition of exclusion criteria and review-stage transitions
+- Prompt design and iterative AI guidance
+- Evaluation and validation of AI-generated implementations
+- Identification and correction of logical and functional issues
+- Definition of the demo, packaging, deployment, and portfolio strategy
+
+### AI contribution
+
+- Generation of the application code from the provided specifications
+- Implementation of backend and frontend components
+- Implementation of database operations and review workflows
+- Code modification and refactoring following iterative instructions
+- Assistance with testing, packaging, deployment, and documentation
+
+## Main features
+
+- Import bibliographic records from **Scopus** and **Web of Science**
+- Detect and handle duplicate study records
+- Manage multiple systematic review projects
+- Register and manage multiple reviewers
+- First-stage title and abstract screening
+- Second-stage full-text screening
+- Independent reviewer decisions
+- Automated consolidation of reviewer decisions
+- Detection of reviewer disagreements
+- Dedicated conflict-resolution workflows
+- Configurable exclusion reasons
+- Full-text PDF upload and viewing
+- Reviewer notes
+- Progress and contribution tracking
+- Study filtering and sorting
+- Export of review data and screening decisions to Excel
+- Local demo reset to restore the initial fictional dataset
+
+## System logic
+
+The application was designed around the relationships between the main entities involved in a systematic review:
+
+```text
+Review
+│
+├── Reviewers
+│
+├── Studies
+│   │
+│   ├── Bibliographic metadata
+│   ├── Full-text PDF
+│   ├── First-screening decisions
+│   ├── Second-screening decisions
+│   ├── Notes
+│   └── Exclusion reason
+│
+├── First-screening conflicts
+├── Second-screening conflicts
+└── Exclusion criteria
+```
+
+The screening workflow is based on independent reviewer decisions that are subsequently consolidated according to predefined rules.
+
+When decisions are compatible, the application automatically determines the screening outcome. When reviewers disagree, the study is moved to a dedicated conflict-resolution workflow where the final decision can be recorded explicitly.
+
+This logic was defined before implementation so that the AI could generate the backend around a consistent relational model and a clearly specified set of business rules.
+
+## Technology stack
+
+### Backend
+
+- **Python**
+- **Flask**
+- **PostgreSQL**
+- **SQLite**
+- **Psycopg**
+
+### Frontend
+
+- **Jinja2**
+- **Bootstrap**
+- **DataTables**
+
+### Data import and export
+
+- **OpenPyXL**
+- **Python Calamine**
+- Scopus CSV import
+- Web of Science XLS import
+- Excel export
+
+### Deployment and packaging
+
+- **Docker**
+- **Gunicorn**
+- **Tailscale**
+- **GitHub Actions**
+- Windows executable packaging
+
+## Engineering highlights
+
+Although the implementation code was AI-generated, the project required defining and validating several non-trivial software behaviors:
+
+- Relational modeling of reviews, studies, reviewers, decisions, and conflicts
+- Support for multiple review projects within the same application
+- Multi-reviewer decision logic
+- Automated consensus rules
+- Conflict persistence and resolution
+- Separate first- and second-screening workflows
+- Exclusion-reason hierarchies
+- Bibliographic ingestion from heterogeneous external formats
+- Full-text PDF storage and retrieval
+- SQLite/PostgreSQL compatibility for demo and production environments
+- Automated testing
+- Dockerized execution
+- GitHub Actions workflows
+- Automated Windows executable builds
+
+These elements were progressively specified, tested, and refined through AI-assisted development.
+
+## Demo version vs. full version
+
+### Demo branch
+
+The `demo` branch is designed for portfolio and evaluation purposes.
+
+It uses:
+
+- **SQLite** for zero-configuration local storage
+- Fictional example studies
+- Fictional reviewer data
+- Local persistent screening progress
+- Reset functionality
+- No production credentials
+- No private infrastructure
+
+It can be run using a Windows executable, Python, or Docker.
+
+### Full version
+
+The complete version in the `main` branch uses:
+
+- **PostgreSQL** as the central relational database
+- **Tailscale** for private access between authorized devices
+- A shared multi-user workflow
+- Centralized review data
+- Persistent full-text documents and reviewer decisions
+
+The full version was designed for actual collaborative use in a systematic review project.
+
+## What you can test
+
+The demo allows you to:
+
+- Review titles and abstracts as different reviewers
+- Record inclusion, exclusion, and intermediate screening decisions
+- Add reviewer notes
+- Create conflicts by making different reviewer decisions
+- Resolve screening conflicts
+- Create and manage exclusion reasons
+- View each reviewer's contribution
+- Track review progress
+- Import the included Web of Science and Scopus example files
+- Upload and open full-text PDFs
+- Export study data and screening decisions to Excel
+- Close the demo and continue later with the locally stored state
+- Restore the fictional initial dataset with **Reset demo**
+
+## Running the demo
+
+No PostgreSQL server, Tailscale network, passwords, or API keys are required.
+
+Choose one of the following options.
+
+### Option 1: Windows executable
+
+This is the simplest option and does not require Python, Git, or Docker.
+
+1. Open the [latest release](https://github.com/DiegoJSN/syst_rev_tool/releases/latest).
+2. Under **Assets**, download `SystRevTool-Demo-Windows.zip`.
+3. Extract the ZIP file.
+4. Open the extracted folder.
+5. Run `SystRevTool-Demo.exe`.
+6. Keep the terminal window open while using the application.
+
+The browser should open automatically.
+
+To stop the application, close the terminal window.
+
+### Option 2: Run with Python
+
+Requires:
+
+- [Git](https://git-scm.com/downloads)
+- [Python 3.11+](https://www.python.org/downloads/)
+
+#### Windows PowerShell
+
+```powershell
+git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
+cd syst_rev_tool
+powershell -ExecutionPolicy Bypass -File .\run_demo.ps1
+```
+
+#### macOS or Linux
+
 ```bash
-psql -h localhost -p 5432 -U postgres -d postgres
+git clone --branch demo --single-branch https://github.com/DiegoJSN/syst_rev_tool.git
+cd syst_rev_tool
+sh ./run_demo.sh
 ```
 
-2. It will ask for a pasword: enter the password you set during installation.
+Then open:
 
-3. Create the user (edit username/password):
-
-```sql
-CREATE USER review_user WITH PASSWORD 'your_strong_password_here';
+```text
+http://127.0.0.1:5000
 ```
 
-4. Create the database and set the owner:
+To stop the application, return to the terminal and press `Ctrl+C`.
 
-```sql
-CREATE DATABASE systrev_db OWNER review_user;
+### Option 3: Run with Docker
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+Clone or download the `demo` branch, open a terminal in the project folder, and run:
+
+```bash
+docker build -t syst-rev-demo .
+docker run --rm -p 5000:5000 syst-rev-demo
 ```
 
-5. Exit psql
-```sql
-\q
+Then open:
+
+```text
+http://127.0.0.1:5000
 ```
 
-### Option B: Using pgAdmin (GUI)
-1. Open **pgAdmin 4** and connect to your local server
-2. Open **Query Tool** in pgAdmin and run (edit values):
-```sql
-CREATE USER review_user WITH PASSWORD 'your_strong_password_here';
-CREATE DATABASE systrev_db OWNER review_user;
-```
+To stop the application, press `Ctrl+C`.
 
+## Limitations of the demo
 
----
+The demo is intended only for portfolio and evaluation purposes.
 
-## 3) Allow PostgreSQL connections from your Tailscale network
-By default, PostgreSQL often listens only on localhost. To allow connections coming from Tailscale:
+- All included study and reviewer data are fictional.
+- Reviewer selection is not intended as secure authentication.
+- SQLite is used for convenience rather than as the production database.
+- The local demo should not be used to store sensitive or real research data.
+- The demo reproduces the main review workflow but simplifies the private infrastructure used by the full version.
 
-1. Open and edit ```postgresql.conf```
-    - Find your ```postgresql.conf``` file (Windows  usually have it under the PostgreSQL “data” directory, something like ```C:\Program Files\PostgreSQL\<version>\data\```).
-    - Set ```listen_addresses``` to include your Tailscale interface. The simplest option is:
-    ```conf
-    listen_addresses = '*'
-    ```
-    - With this, PostgreSQL listens for connections; the actual restriction is carried out in ```pg_hba.conf``` and the firewall.
+## Branches
 
-2. Open and edit ```pg_hba.conf```
-    - In ```pg_hba.conf```, add a rule to allow only Tailscale IPs (CGNAT range) to reach your DB (you can add this line at the end of the file):
-    ```conf
-    host    systrev_db   review_user   100.64.0.0/10   scram-sha-256
-    ```
-    - This enables any device on the Tailnet (Tailscale 100.x IP addresses) to connect to the database and user.
+- [`demo`](https://github.com/DiegoJSN/syst_rev_tool/tree/demo): portfolio-ready version with fictional data and simplified local infrastructure
+- [`main`](https://github.com/DiegoJSN/syst_rev_tool/tree/main): complete project using PostgreSQL and private multi-device access
 
-3. Restart PostgreSQL
-Restart the PostgreSQL service so changes apply.
-    - Windows:
-        - Win + R
-        - Type ``services.msc`` and press Enter
-        - Search for a service type:
-            - ``postgresql-x64-16`` (or 15, 14…)
-        - Right click -> **Restart**
+## Disclaimer
 
----
+This project is presented as a portfolio example of **AI-assisted software development**.
 
-## 4) Install Tailscale
+The software implementation was generated using AI under my direction. The system concept, domain model, workflows, requirements, relational structure, business logic, validation criteria, and iterative development decisions were defined and supervised by me.
 
-1. Download Tailscale:
-    - [https://tailscale.com/download](https://tailscale.com/download)
-
-3. Install it like any normal application.
-
-4. Log in to the correct tailnet
-    - Open Tailscale
-    - Click **Log in**
-    - Make sure you log into the **tailnet you will share with reviewers**
-    
----
-
-## 5) Enable MagicDNS
-MagicDNS lets you use a stable hostname (recommended), for example:
-    - ``syst-rev-server``
-1. In the Tailscale admin console:
-    - Go to **DNS**
-    - Enable **MagicDNS**
-    - In **HTTPS Certificates**, tap **Enable HTTPS** and accept the consent.
-    
-2. In the Tailscale app settings:
-   - Make sure that **Use Tailscale DNS settings** is enabled (wording can vary slightly by OS).
-
-## 6) Rename the server device
-In the Tailscale admin console
-- Go to **Machines** 
-- Rename the server to something simple like: ``syst-rev-server``
-    - This will be used as the hostname inside your tailnet (with MagicDNS).
-    
-## 7) Open PostgreSQL port 5432 in the firewall (Tailscale only)
-You want PostgreSQL reachable only over Tailscale, not from the public internet.
-- Windows (GUI method):
-    1. Win + R 
-    2. Type ``wf.msc`` and press Enter
-    3. On the right side: Inbound Rules -> **New Rule...**
-    4. Rule Type: **Port**
-    5. Protocol: **TCP**
-    6. Specific local ports: **5432**
-    7. Action: **Allow the connection**
-    8. Profile: usually **Private** (and Domain if applicable). Do not select Public
-    9. Name it: ``PostgreSQL 5432 (Tailscale)``
-    Now restrict the rule to Tailscale IPs:
-    1. Find the rule you created → right click → Properties
-    2. Go to **Scope**
-    3. Remote IP address → “These IP addresses” → Add:
-        - ``100.64.0.0/10``
-
----
-
-## 8) Install Python
-1. Download PythonL
-    - [https://www.python.org/downloads/](https://www.python.org/downloads/)
-2. Windows notes:
-    - During install, check: **Add Python to PATH**
-
----
-
-## 9) Download the GitHub project and install dependencies
-1. Download this project: download ZIP from GitHub and extract it.
-
-2. Install dependencies (choose one option)
-
-### Option A (recommended): Run the automatic setup script (Windows)
-1. In the extracted project folder, double-click ``server_setup.bat``
-2. Wait until the script finishes. If everything goes well, you should see a success message saying:
-    ```bash
-    Setup is complete. Check and configure the .env file, then run the run.bat file.
-    ```
-
-### Option B: Install manually using a terminal (Windows/macOS/Linux)
-
-1. Open a terminal 
-    - Windows: PowerShell
-    - macOS: Terminal
-    - Linux: Terminal
-
-2. Go to the project folder. Then:
-    ```bash
-    # Windows:
-    cd C:\path\to\project
-    # macOS/Linux:
-    cd /path/to/project
-    ```
-3. Create a virtual environment (venv):
-    ```bash
-    python -m venv venv
-    ```
-4. Activate venv
-    ```bash
-    # Windows:
-    venv\Scripts\activate
-    # maxOS/Linux:
-    source venv/bin/activate
-    ```
-5. Install requirements:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
----
-
-## 10) Configure the ``.env`` file
-1. Copy the file ``.env_example`` and rename it to ``.env``
-2. Edit ``.env`` and set your DATABASE_URL:
-    - Required format:
-    ```text
-    DATABASE_URL="postgresql://{user_name}:{password}@{magicdns_hostname OR tailscale_ip}:5432/{db_name}"
-    ```
-    - Example 1 (with ecommended with MagicDNS hostname):
-    ```text
-    DATABASE_URL="postgresql://review_user:your_strong_password_here@syst-rev-server:5432/systrev_db"
-    ```
-    
-    - Example 2 (using a Tailscale IP):
-    ```text
-    DATABASE_URL="postgresql://review_user:your_strong_password_here@100.104.194.28:5432/systrev_db"
-    ```
-
----
-
-## 11) Run the app on the server and expose the web app to reviewers with Tailscale Serve
-
-Two options:
-
-### Option A (recommended): Run the automatic run server script (Windows)
-1. In the extracted project folder, double-click ``run_server.bat``
-2. Wait until the script finishes. If everything goes well, you should see a message saying 
-    ```bash
-    Serve started and running in the background.
-    ```
-    - **Do not close this terminal window**. If you close it, the server will stop and the app will become unreachable.
-
-
-
-### Option B: using a terminal (Windows/macOS/Linux)
-1. Open the terminal and go to the project folder.
-2. Activate venv
-3. With the venv activated, type:
-    ```bash
-    python app.py
-    ```
-4. Confirm it works locally on the server:
-    ```text
-    http://127.0.0.1:5000
-    ```
-
-5. Enable Serve for your tailnet (one-time)
-    - If Serve is disabled, Tailscale will tell you and give you a URL to enable it in the admin console.
-6. Start Serve
-    - Open the terminal, and type:
-    ```bash
-    tailscale serve --bg 5000
-    ```
-    This publishes your local app (running on 127.0.0.1:5000) as an HTTPS URL inside your tailnet.
-    
-    
-    
-
----
-
-## 12) Run the app on the server and expose the web app to reviewers with Tailscale Serve
-
-3. Share the URL with reviewers:
-    - ``tailscale serve`` will show a URL similar to:
-    ```text
-    https://syst-rev-server.<your-tailnet-name>.ts.net
-    ```
-    That is the URL reviewers should open.
-
-
-
----
-
-## 13) Share the server machine with reviewers (Device Sharing):
-In the Tailscale Admin Console:
-1. Go to the **Machines** tab.
-2. Find your server machine, click the **three dots (… )** menu, then select **Share**.
-3. Open the **Share via email** tab.
-4. Enter the reviewer’s email address and click **Share**.
-
----
+The demo is not intended to replace established systematic review platforms or to be used without appropriate validation in production research environments.
