@@ -229,11 +229,11 @@ class DemoSmokeTest(unittest.TestCase):
                 """,
                 (review["id"],),
             ).fetchone()
-            self.assertEqual(counts["total"], 258)
+            self.assertEqual(counts["total"], 255)
             self.assertEqual(counts["with_pdf"], 38)
-            self.assertEqual(counts["first_pending"], 164)
+            self.assertEqual(counts["first_pending"], 162)
             self.assertEqual(counts["first_conflicts"], 2)
-            self.assertEqual(counts["first_rejected"], 54)
+            self.assertEqual(counts["first_rejected"], 53)
             self.assertEqual(counts["second_pending"], 12)
             self.assertEqual(counts["second_conflicts"], 2)
             self.assertEqual(counts["to_extract"], 6)
