@@ -215,6 +215,109 @@ PDF_ONLY_EXTRACTION_IDS = {6, 7, 9, 10}
 EXPORTED_EXTRACTION_IDS = {168, 190}
 EXTRACTION_IDS = PDF_ONLY_EXTRACTION_IDS | EXPORTED_EXTRACTION_IDS
 
+PDF_ONLY_STUDY_METADATA = {
+    6: {
+        "title": "Degrowth as a plausible pathway for food systems transformation",
+        "authors": (
+            "Matthew Gibson; Costanza Conti; Daniel Mason-D’Croz; Anna Norberg; "
+            "Maria Boa Alvarado; Mario Herrero"
+        ),
+        "year": 2025,
+        "doi": "10.1038/s43016-024-01108-5",
+        "journal": "NATURE FOOD",
+        "abstract": (
+            "Food systems require urgent transformation towards social and ecological "
+            "sustainability. Degrowth posits a radical pathway of transformation to "
+            "reduce ecological impacts while increasing well-being and reducing "
+            "inequality. Here we highlight that degrowth and food systems—albeit both "
+            "linked to transformation—are not well integrated. We conduct a conceptual "
+            "exploration of the potential alignment between key food systems and "
+            "degrowth transformation measures, arguing for complementary and reciprocal "
+            "perspectives to theorize and enact transformation. Finally, we offer "
+            "concrete practical actions to integrate degrowth and food systems, thereby "
+            "widening the narrative and analytical lens of social–ecological transformation."
+        ),
+    },
+    7: {
+        "title": "Sustainable agrifood systems for a post-growth world",
+        "authors": (
+            "Steven R. McGreevy; Christoph D. D. Rupprecht; Daniel Niles; Arnim Wiek; "
+            "Michael Carolan; Giorgos Kallis; Petr Jehlička; Kanang Kantamaturapoj; "
+            "Astrid Mangnus; Oliver Taherzadeh; Marlyne Sahakian; Ilan Chabay; "
+            "Jose-Luis Vivero-Pol; Rajat Chaudhuri; Ashley Colby; Maximilian Spiegelberg; "
+            "Mai Kobayashi; Bálint Balázs; Kazuaki Tsuchiya; Motoki Akitsu; Hein Mallee; "
+            "Clara Nicholls; Keiko Tanaka; Joost Vervoort; Kazuhiko Ota; Rika Shinkai; "
+            "Ashlesha Khadse; Norie Tamura; Ken-ichi Abe; Miguel Altieri; Yo-Ichiro Sato; "
+            "Masashi Tachikawa"
+        ),
+        "year": 2022,
+        "doi": "10.1038/s41893-022-00933-5",
+        "journal": "NATURE SUSTAINABILITY",
+        "abstract": (
+            "Sustainable agrifood systems are critical to averting climate-driven social "
+            "and ecological disasters, overcoming the growth paradigm and redefining the "
+            "interactions of humanity and nature in the twenty-first century. This "
+            "Perspective describes an agenda and examples for comprehensive agrifood "
+            "system redesign according to principles of sufficiency, regeneration, "
+            "distribution, commons and care. This redesign should be supported by "
+            "coordinated education and research efforts that do not simply replicate "
+            "dominant discourses on food system sustainability but point towards a "
+            "post-growth world in which agroecological life processes support healthy "
+            "communities rather than serving as inputs for the relentless pursuit of "
+            "economic growth."
+        ),
+    },
+    9: {
+        "title": "Evaluation of Local Food Systems Based on De-growth",
+        "authors": "Judit Dombi; Zoltán Elekes",
+        "year": 2014,
+        "doi": None,
+        "journal": "CERS",
+        "abstract": (
+            "In this paper we argue that the purpose of local economic development "
+            "formulated on the basis of de-growth differs from the conventional "
+            "competitiveness-based approach significantly and meaningfully. Local food "
+            "systems are often considered alternative local economic development "
+            "initiatives and are prime candidates as means to the ends of local economic "
+            "development based on de-growth. In this initial step of research we attempt "
+            "to differentiate de-growth oriented local economic development from the "
+            "conventional competitiveness oriented approach."
+        ),
+    },
+    10: {
+        "title": (
+            "Integrating degrowth and efficiency perspectives enables an "
+            "emission-neutral food system by 2100"
+        ),
+        "authors": (
+            "Benjamin Leon Bodirsky; David Meng-Chuen Chen; Isabelle Weindl; "
+            "Felicitas Beier; Edna J. Molina Bacca; Franziska Gaupp; Alexander Popp; "
+            "Bjoern Soergel; Hermann Lotze-Campen"
+        ),
+        "year": 2022,
+        "doi": "10.1038/s43016-022-00500-3",
+        "journal": "NATURE FOOD",
+        "abstract": (
+            "Degrowth proponents advocate reducing ecologically destructive forms of "
+            "production and resource throughput in wealthy economies to achieve "
+            "environmental goals, while transforming production to focus on human "
+            "well-being. Here we present a quantitative model to test degrowth principles "
+            "in the food and land system. Our results confirm that reducing and "
+            "redistributing income alone, within current development paradigms, leads to "
+            "limited greenhouse gas (GHG) emission mitigation from agriculture and "
+            "land-use change, as the nutrition transition towards unsustainable diets "
+            "already occurs at relatively low income levels. Instead, we show that a "
+            "structural, qualitative food system transformation can achieve a steady-state "
+            "food system economy that is net GHG-neutral by 2100 while improving "
+            "nutritional outcomes. This sustainable transformation reduces material "
+            "throughput via a convergence towards a needs-based food system, is enabled "
+            "by a more equitable income distribution and includes efficient resource "
+            "allocation through the pricing of GHG emissions as a complementary strategy. "
+            "It thereby integrates degrowth and efficiency perspectives."
+        ),
+    },
+}
+
 
 def _clear_demo_tables(db):
     for table in (
@@ -313,6 +416,20 @@ def seed_demo(app):
                     "SELECT COUNT(*) AS total FROM studies WHERE id_review = %s",
                     (existing_review["id"],),
                 ).fetchone()["total"]
+                legacy_pdf_metadata = False
+                if (
+                    existing_review["review_name"] == DEMO_REVIEW_NAME
+                    and study_total == 258
+                ):
+                    study_six = db.execute(
+                        "SELECT doi FROM studies WHERE id_review = %s AND id = 6",
+                        (existing_review["id"],),
+                    ).fetchone()
+                    legacy_pdf_metadata = (
+                        not study_six
+                        or study_six["doi"] != "10.1038/s43016-024-01108-5"
+                    )
+
                 replace_old_fixture = (
                     (
                         existing_review["review_name"] == "Urban green spaces and wellbeing"
@@ -322,6 +439,7 @@ def seed_demo(app):
                         existing_review["review_name"] == DEMO_REVIEW_NAME
                         and study_total == 38
                     )
+                    or legacy_pdf_metadata
                 )
 
             if replace_old_fixture:
@@ -356,6 +474,31 @@ def seed_demo(app):
             - pdf_ids
             - first_rejected_ids
         )
+        first_conflict_ids = sorted(first_pending_ids)[:2]
+        second_conflict_ids = sorted(second_pending_ids)[:2]
+        if len(first_conflict_ids) != 2 or len(second_conflict_ids) != 2:
+            raise RuntimeError("The portfolio fixture needs two conflicts per screening phase.")
+
+        first_conflict_notes = {
+            first_conflict_ids[0]: (
+                "Alex Morgan : The title explicitly links degrowth with agricultural systems.;$] "
+                "Sam Rivera : The abstract does not clearly describe an agricultural intervention.;$] "
+            ),
+            first_conflict_ids[1]: (
+                "Priya Shah : Relevant food-system transformation study; keep for full-text review.;$] "
+                "Daniel Kim : Population and outcomes appear outside the review protocol.;$] "
+            ),
+        }
+        second_conflict_notes = {
+            second_conflict_ids[0]: (
+                "Alex Morgan : The full text applies degrowth to an agrifood-system question.;$] "
+                "Sam Rivera : The agricultural connection may be too indirect for the protocol.;$] "
+            ),
+            second_conflict_ids[1]: (
+                "Priya Shah : The paper uses an explicit post-growth or degrowth framing.;$] "
+                "Daniel Kim : Degrowth is mentioned but may not be the analytical framework.;$] "
+            ),
+        }
 
         # Second screening is intentionally PDF-only.
         if any(study_id not in pdf_ids for study_id in second_pending_ids):
@@ -417,7 +560,10 @@ def seed_demo(app):
 
         excluded_reason_by_study = {}
         for study_id in sorted(all_study_ids):
-            metadata = fixture_studies.get(study_id)
+            metadata = (
+                fixture_studies.get(study_id)
+                or PDF_ONLY_STUDY_METADATA.get(study_id)
+            )
             if metadata:
                 doi = metadata.get("doi")
                 title = metadata.get("title")
@@ -440,8 +586,14 @@ def seed_demo(app):
             file_name = pdf_path.name if pdf_path else None
             file_data = pdf_path.read_bytes() if pdf_path else None
             first_notes = None
+            second_notes = None
 
-            if study_id in first_pending_ids:
+            if study_id in first_conflict_ids:
+                first_decision = "conflict"
+                second_decision = None
+                exclusion_reason = None
+                first_notes = first_conflict_notes[study_id]
+            elif study_id in first_pending_ids:
                 first_decision = None
                 second_decision = None
                 exclusion_reason = None
@@ -453,6 +605,11 @@ def seed_demo(app):
                     "Demo exclusion: "
                     + reason_text_by_hierarchy[int(reason_hierarchy)]
                 )
+            elif study_id in second_conflict_ids:
+                first_decision = "yes"
+                second_decision = "conflict"
+                exclusion_reason = None
+                second_notes = second_conflict_notes[study_id]
             elif study_id in second_pending_ids:
                 first_decision = "yes"
                 second_decision = None
@@ -473,9 +630,10 @@ def seed_demo(app):
                     id, id_review, document_type, doi, title, authors, year,
                     abstract, source_title, file_name, file_data,
                     first_screening_included, first_screening_notes,
-                    second_screening_included, exclusion_reason
+                    second_screening_included, second_screening_notes,
+                    exclusion_reason
                 )
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
                     study_id,
@@ -492,6 +650,7 @@ def seed_demo(app):
                     first_decision,
                     first_notes,
                     second_decision,
+                    second_notes,
                     exclusion_reason,
                 ),
             )
@@ -512,6 +671,51 @@ def seed_demo(app):
                     (review_id, reviewer_ids[reviewer_position], study_id, decision),
                 )
                 first_contributions[reviewer_position] += 1
+
+        first_conflict_reviewers = ((0, 1), (2, 3))
+        for position, study_id in enumerate(first_conflict_ids):
+            reviewer_pair = first_conflict_reviewers[position]
+            for reviewer_position, decision in zip(reviewer_pair, ("yes", "no")):
+                reviewer_id = reviewer_ids[reviewer_position]
+                db.execute(
+                    """
+                    INSERT INTO first_screening (
+                        id_review,id_reviewer,id_study,decision
+                    ) VALUES (%s,%s,%s,%s)
+                    """,
+                    (review_id, reviewer_id, study_id, decision),
+                )
+                db.execute(
+                    """
+                    INSERT INTO first_screening_conflicts (
+                        id_review,id_reviewer,id_study,decision
+                    ) VALUES (%s,%s,%s,%s)
+                    """,
+                    (review_id, reviewer_id, study_id, decision),
+                )
+                db.execute(
+                    """
+                    INSERT INTO screening_events (
+                        id_review,id_study,id_reviewer,phase,event_type,decision,note
+                    ) VALUES (%s,%s,%s,'first','decision',%s,%s)
+                    """,
+                    (
+                        review_id,
+                        study_id,
+                        reviewer_id,
+                        decision,
+                        first_conflict_notes[study_id],
+                    ),
+                )
+                first_contributions[reviewer_position] += 1
+            db.execute(
+                """
+                INSERT INTO screening_events (
+                    id_review,id_study,phase,event_type,decision,note
+                ) VALUES (%s,%s,'first','conflict','conflict',%s)
+                """,
+                (review_id, study_id, first_conflict_notes[study_id]),
+            )
 
         second_contributions = [0] * len(reviewer_ids)
         completed_second_ids = EXTRACTION_IDS | second_excluded_ids
@@ -538,6 +742,73 @@ def seed_demo(app):
                     ),
                 )
                 second_contributions[reviewer_position] += 1
+
+        second_conflict_reviewers = ((0, 1), (2, 3))
+        second_conflict_reason_hierarchies = (3, 4)
+        for position, study_id in enumerate(second_conflict_ids):
+            reviewer_pair = second_conflict_reviewers[position]
+            reason_id = reason_ids[second_conflict_reason_hierarchies[position]]
+            for reviewer_position, decision in zip(reviewer_pair, ("yes", "no")):
+                reviewer_id = reviewer_ids[reviewer_position]
+                decision_reason = reason_id if decision == "no" else None
+                db.execute(
+                    """
+                    INSERT INTO second_screening (
+                        id_review,id_reviewer,id_study,decision,reason
+                    ) VALUES (%s,%s,%s,%s,%s)
+                    """,
+                    (
+                        review_id,
+                        reviewer_id,
+                        study_id,
+                        decision,
+                        decision_reason,
+                    ),
+                )
+                db.execute(
+                    """
+                    INSERT INTO second_screening_conflicts (
+                        id_review,id_reviewer,id_study,decision,reason
+                    ) VALUES (%s,%s,%s,%s,%s)
+                    """,
+                    (
+                        review_id,
+                        reviewer_id,
+                        study_id,
+                        decision,
+                        decision_reason,
+                    ),
+                )
+                db.execute(
+                    """
+                    INSERT INTO screening_events (
+                        id_review,id_study,id_reviewer,phase,event_type,
+                        decision,reason,note
+                    ) VALUES (%s,%s,%s,'second','decision',%s,%s,%s)
+                    """,
+                    (
+                        review_id,
+                        study_id,
+                        reviewer_id,
+                        decision,
+                        decision_reason,
+                        second_conflict_notes[study_id],
+                    ),
+                )
+                second_contributions[reviewer_position] += 1
+            db.execute(
+                """
+                INSERT INTO screening_events (
+                    id_review,id_study,phase,event_type,decision,reason,note
+                ) VALUES (%s,%s,'second','conflict','conflict',%s,%s)
+                """,
+                (
+                    review_id,
+                    study_id,
+                    reason_id,
+                    second_conflict_notes[study_id],
+                ),
+            )
 
         for position, reviewer_id in enumerate(reviewer_ids):
             db.execute(
