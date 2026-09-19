@@ -9,6 +9,10 @@ SystRev Tool supports the main workflow of a systematic review, from bibliograph
 
 The goal of this project is to demonstrate the ability to **design a software system, translate domain knowledge into precise technical specifications, and use AI effectively to turn those specifications into a working product**.
 
+## Demo preview
+
+![SystRev Tool demo](images/systrev-demo.gif)
+
 ## Project purpose
 
 The application was originally conceived to support the specific needs of a real systematic review project.
