@@ -8,7 +8,7 @@ Aplicación web colaborativa para gestionar la selección de estudios de una rev
 
 Este proyecto se desarrolló para cubrir las necesidades personalizadas de un proyecto de revisión sistemática, adaptando el flujo de trabajo a sus fases de selección, coordinación entre revisores y extracción de estudios.
 
-La inteligencia artificial se utilizó como herramienta de apoyo durante su elaboración, especialmente para asistir en tareas de desarrollo, depuración y documentación, manteniendo la revisión y validación humana de las decisiones técnicas.
+La inteligencia artificial se utilizó como herramienta de apoyo durante la elaboración de esta herramienta.
 
 La rama **`demo`** utiliza una base de datos local con contenido de ejemplo para que cualquiera pueda probar el flujo sin cuentas ni credenciales.
 
