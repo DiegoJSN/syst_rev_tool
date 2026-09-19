@@ -66,7 +66,9 @@ Abre <http://127.0.0.1:5000>. Para detener la demo, pulsa **Ctrl+C**.
 ## Qué puedes probar
 
 - Revisar títulos y resúmenes con distintos revisores.
-- Consultar y resolver conflictos.
+- Escribir notas y guardar decisiones de inclusión o exclusión.
+- Generar conflictos cuando dos revisores discrepan y resolverlos desde la aplicación.
+- Cerrar la demo y continuar más tarde: el progreso se conserva en SQLite.
 - Crear motivos de exclusión.
 - Ver el progreso y la contribución de cada revisor.
 - Importar los ejemplos incluidos de Web of Science y Scopus.
@@ -79,7 +81,7 @@ Abre <http://127.0.0.1:5000>. Para detener la demo, pulsa **Ctrl+C**.
 - **Jinja2, Bootstrap y DataTables:** interfaz web renderizada en el navegador.
 - **PostgreSQL + Psycopg:** almacenamiento centralizado de la versión completa y colaborativa.
 - **Tailscale:** conexión privada entre los equipos que acceden al despliegue completo.
-- **SQLite:** base de datos local sin configuración utilizada por esta demo.
+- **SQLite:** base de datos local sin configuración que conserva decisiones, notas, conflictos y resoluciones de la demo.
 - **OpenPyXL y Python Calamine:** importación y exportación de hojas de cálculo.
 - **Docker y Gunicorn:** empaquetado y ejecución reproducible de la aplicación.
 
