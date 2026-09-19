@@ -2,9 +2,17 @@ name: Build Windows executable
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag that will receive the executable"
+        required: true
+        default: "v1.0.2"
   push:
     tags:
       - "demo-v*"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -51,4 +59,14 @@ jobs:
             dist/SystRevTool-Demo-Windows.zip
             dist/SystRevTool-Demo-Windows.zip.sha256
           if-no-files-found: error
+
+      - name: Attach executable to release
+        if: startsWith(github.ref, 'refs/tags/demo-v') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          files: |
+            dist/SystRevTool-Demo-Windows.zip
+            dist/SystRevTool-Demo-Windows.zip.sha256
+          generate_release_notes: false
 
