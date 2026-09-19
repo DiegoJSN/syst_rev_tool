@@ -72,6 +72,131 @@ class DemoSmokeTest(unittest.TestCase):
             self.assertEqual(excluded["second_screening_included"], "no")
             self.assertEqual(excluded["hierarchy"], 3)
 
+    def test_single_dropdown_login_and_seeded_conflicts(self):
+        from db import get_db
+
+        page = self.client.get("/1_main.html")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn(b'name="login_name"', page.data)
+        self.assertNotIn(b'login_name_2', page.data)
+
+        login = self.client.post(
+            "/1_main.html",
+            data={"action": "login", "login_name": "Alex Morgan"},
+            follow_redirects=True,
+        )
+        self.assertEqual(login.status_code, 200)
+        self.assertIn(b"Logged in as", login.data)
+        self.assertIn(b"Alex Morgan", login.data)
+
+        with self.app.app_context():
+            db = get_db()
+            phase_counts = db.execute(
+                """
+                SELECT
+                  SUM(CASE WHEN first_screening_included = 'conflict' THEN 1 ELSE 0 END)
+                    AS first_conflicts,
+                  SUM(CASE WHEN second_screening_included = 'conflict' THEN 1 ELSE 0 END)
+                    AS second_conflicts
+                FROM studies WHERE id_review = 1
+                """
+            ).fetchone()
+            self.assertEqual(phase_counts["first_conflicts"], 2)
+            self.assertEqual(phase_counts["second_conflicts"], 2)
+
+            first_rows = db.execute(
+                """
+                SELECT s.id, s.first_screening_notes, COUNT(fsc.id_reviewer) AS decisions
+                FROM studies s
+                JOIN first_screening_conflicts fsc
+                  ON fsc.id_review = s.id_review AND fsc.id_study = s.id
+                WHERE s.id_review = 1 AND s.first_screening_included = 'conflict'
+                GROUP BY s.id, s.first_screening_notes
+                ORDER BY s.id
+                """
+            ).fetchall()
+            self.assertEqual(len(first_rows), 2)
+            self.assertTrue(all(row["decisions"] == 2 for row in first_rows))
+            self.assertTrue(all(";$]" in row["first_screening_notes"] for row in first_rows))
+
+            second_rows = db.execute(
+                """
+                SELECT s.id, s.second_screening_notes, er.hierarchy, er.reason
+                FROM studies s
+                JOIN second_screening_conflicts ssc
+                  ON ssc.id_review = s.id_review AND ssc.id_study = s.id
+                JOIN exclusion_reasons er ON er.id = ssc.reason
+                WHERE s.id_review = 1
+                  AND s.second_screening_included = 'conflict'
+                  AND ssc.decision = 'no'
+                ORDER BY s.id
+                """
+            ).fetchall()
+            self.assertEqual(len(second_rows), 2)
+            self.assertEqual(
+                [row["hierarchy"] for row in second_rows],
+                [3, 4],
+            )
+            self.assertTrue(all(row["reason"].startswith("Wrong ") for row in second_rows))
+            self.assertTrue(all(";$]" in row["second_screening_notes"] for row in second_rows))
+
+    def test_extraction_examples_have_complete_metadata(self):
+        from db import get_db
+
+        expected = {
+            6: (
+                "NATURE FOOD",
+                2025,
+                "10.1038/s43016-024-01108-5",
+                "Matthew Gibson",
+                "Degrowth as a plausible pathway",
+            ),
+            7: (
+                "NATURE SUSTAINABILITY",
+                2022,
+                "10.1038/s41893-022-00933-5",
+                "Steven R. McGreevy",
+                "Sustainable agrifood systems",
+            ),
+            9: (
+                "CERS",
+                2014,
+                None,
+                "Judit Dombi",
+                "Evaluation of Local Food Systems",
+            ),
+            10: (
+                "NATURE FOOD",
+                2022,
+                "10.1038/s43016-022-00500-3",
+                "Benjamin Leon Bodirsky",
+                "Integrating degrowth and efficiency perspectives",
+            ),
+        }
+
+        with self.app.app_context():
+            db = get_db()
+            rows = db.execute(
+                """
+                SELECT id, source_title, year, doi, authors, title, abstract,
+                       file_name, length(file_data) AS file_size
+                FROM studies
+                WHERE id_review = 1 AND id IN (6,7,9,10)
+                ORDER BY id
+                """
+            ).fetchall()
+            self.assertEqual([row["id"] for row in rows], [6, 7, 9, 10])
+            for row in rows:
+                journal, year, doi, author, title = expected[row["id"]]
+                self.assertEqual(row["source_title"], journal)
+                self.assertEqual(row["year"], year)
+                self.assertEqual(row["doi"], doi)
+                self.assertIn(author, row["authors"])
+                self.assertIn(title, row["title"])
+                self.assertGreater(len(row["abstract"]), 250)
+                self.assertTrue(row["file_name"].startswith(f"{row['id']}_"))
+                self.assertGreater(row["file_size"], 0)
+
     def test_pdf_only_second_screening_and_phase_counts(self):
         from db import get_db
 
@@ -89,9 +214,11 @@ class DemoSmokeTest(unittest.TestCase):
                   COUNT(*) AS total,
                   SUM(CASE WHEN file_data IS NOT NULL THEN 1 ELSE 0 END) AS with_pdf,
                   SUM(CASE WHEN first_screening_included IS NULL THEN 1 ELSE 0 END) AS first_pending,
+                  SUM(CASE WHEN first_screening_included = 'conflict' THEN 1 ELSE 0 END) AS first_conflicts,
                   SUM(CASE WHEN first_screening_included = 'no' THEN 1 ELSE 0 END) AS first_rejected,
                   SUM(CASE WHEN first_screening_included = 'yes'
                             AND second_screening_included IS NULL THEN 1 ELSE 0 END) AS second_pending,
+                  SUM(CASE WHEN second_screening_included = 'conflict' THEN 1 ELSE 0 END) AS second_conflicts,
                   SUM(CASE WHEN second_screening_included = 'yes' THEN 1 ELSE 0 END) AS to_extract,
                   SUM(CASE WHEN second_screening_included = 'no' THEN 1 ELSE 0 END) AS second_excluded,
                   SUM(CASE WHEN first_screening_included = 'yes'
@@ -104,9 +231,11 @@ class DemoSmokeTest(unittest.TestCase):
             ).fetchone()
             self.assertEqual(counts["total"], 258)
             self.assertEqual(counts["with_pdf"], 38)
-            self.assertEqual(counts["first_pending"], 166)
+            self.assertEqual(counts["first_pending"], 164)
+            self.assertEqual(counts["first_conflicts"], 2)
             self.assertEqual(counts["first_rejected"], 54)
-            self.assertEqual(counts["second_pending"], 14)
+            self.assertEqual(counts["second_pending"], 12)
+            self.assertEqual(counts["second_conflicts"], 2)
             self.assertEqual(counts["to_extract"], 6)
             self.assertEqual(counts["second_excluded"], 18)
             self.assertEqual(counts["second_without_pdf"], 0)
@@ -132,8 +261,7 @@ class DemoSmokeTest(unittest.TestCase):
             "/1_main.html",
             data={
                 "action": "login",
-                "login_name_1": "Alex Morgan",
-                "login_name_2": "Alex Morgan",
+                "login_name": "Alex Morgan",
             },
             follow_redirects=True,
         )
@@ -212,8 +340,7 @@ class DemoSmokeTest(unittest.TestCase):
                 "/1_main.html",
                 data={
                     "action": "login",
-                    "login_name_1": name,
-                    "login_name_2": name,
+                    "login_name": name,
                 },
                 follow_redirects=True,
             )
