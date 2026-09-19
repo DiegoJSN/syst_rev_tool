@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import sqlite3
@@ -172,31 +173,23 @@ DEMO_PARTICIPANTS = (
     "Lucía Torres",
     "Jordan Blake",
 )
-FIRST_SCREENING_IDS = {6, 7, 9, 10, 97, 98, 99, 102, 104, 106, 112, 113}
-SECOND_SCREENING_IDS = {116, 117, 118, 119, 120, 121, 126, 128, 129, 130, 131, 134}
-EXTRACTION_IDS = {143, 147, 151, 153, 154, 155, 161, 165, 166, 168, 169, 175, 177, 190}
-EXPECTED_EXAMPLE_IDS = FIRST_SCREENING_IDS | SECOND_SCREENING_IDS | EXTRACTION_IDS
 
-SPECIAL_PDF_METADATA = {
-    118: ("Albert", 2020, "Albert 2020: sustainable de-growth"),
-    131: ("Steelman", None, "JPE 5850: Steelman"),
-    147: ("Demo study authors", None, "Study 2415"),
-    166: (
-        "Schiller-Merkens",
-        2022,
-        "Prefiguring an alternative economy: understanding prefigurative organizing and its struggles",
-    ),
-    169: (
-        "Schindler et al.",
-        2023,
-        "Deindustrialisation and the politics of subordinate degrowth: the case of Greater Buenos Aires",
-    ),
-    190: (
-        "Tzekou and Gritzas",
-        2023,
-        "The interconnection between ecology",
-    ),
+# Records with complete exported metadata are used in the two interactive
+# screening queues. Studies with an exported exclusion reason remain visible
+# in the second-screening exclusions view.
+FIRST_SCREENING_IDS = {97, 98, 99, 104, 112, 113, 116}
+SECOND_SCREENING_IDS = {121, 126, 128, 129, 130, 143, 165}
+EXTRACTION_IDS = {6, 7, 9, 10, 168, 190}
+EXCLUDED_IDS = {
+    102, 106, 117, 118, 119, 120, 131, 134, 147,
+    151, 153, 154, 155, 161, 166, 169, 175, 177,
 }
+EXPECTED_EXAMPLE_IDS = (
+    FIRST_SCREENING_IDS
+    | SECOND_SCREENING_IDS
+    | EXTRACTION_IDS
+    | EXCLUDED_IDS
+)
 
 
 def _clear_demo_tables(db):
@@ -213,19 +206,19 @@ def _clear_demo_tables(db):
         )
 
 
-def _example_pdf_metadata(study_id: int, filename: str):
-    if study_id in SPECIAL_PDF_METADATA:
-        return SPECIAL_PDF_METADATA[study_id]
-
+def _example_pdf_metadata(filename: str):
     label = Path(filename).stem.split("_", 1)[1]
-    match = re.match(r"^(?P<authors>.+?)\s+(?P<year>(?:19|20)\d{2})\s+-\s+(?P<title>.+)$", label)
+    match = re.match(
+        r"^(?P<authors>.+?)\s+(?P<year>(?:19|20)\d{2})\s+-\s+(?P<title>.+)$",
+        label,
+    )
     if match:
         return (
             match.group("authors"),
             int(match.group("year")),
             match.group("title"),
         )
-    return ("Demo study authors", None, label.replace("-", " "))
+    return ("Metadata unavailable in source export", None, label.replace("-", " "))
 
 
 def _numbered_example_pdfs(app):
@@ -246,8 +239,27 @@ def _numbered_example_pdfs(app):
     return pdfs
 
 
+def _load_demo_fixture(app):
+    fixture_directory = Path(app.root_path) / "example_data"
+    with (fixture_directory / "studies.json").open(encoding="utf-8") as handle:
+        study_payload = json.load(handle)
+    with (fixture_directory / "exclusion_reasons.json").open(encoding="utf-8") as handle:
+        reason_payload = json.load(handle)
+
+    studies = {
+        int(item["study_id"]): item
+        for item in study_payload["studies"]
+    }
+    reasons = [
+        item
+        for item in reason_payload["exclusion_reasons"]
+        if item.get("is_active", True)
+    ]
+    return studies, reasons
+
+
 def seed_demo(app):
-    """Seed a collaborative review backed by the numbered PDFs in example_pdfs."""
+    """Seed a collaborative review backed by exported metadata and included PDFs."""
     if not app.config.get("DEMO_MODE"):
         return
 
@@ -257,30 +269,43 @@ def seed_demo(app):
             "SELECT id, review_name FROM review ORDER BY id"
         ).fetchall()
         if existing_reviews:
-            # Transparently replace only the original six-record fixture. Any
-            # user-created demo content is left untouched and can be reset from
-            # the interface when desired.
-            if (
-                len(existing_reviews) == 1
-                and existing_reviews[0]["review_name"] == "Urban green spaces and wellbeing"
-                and db.execute(
-                    "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s",
-                    (existing_reviews[0]["id"],),
-                ).fetchone()["c"] == 6
-            ):
+            replace_old_fixture = False
+            if len(existing_reviews) == 1:
+                existing_review = existing_reviews[0]
+                study_summary = db.execute(
+                    """
+                    SELECT COUNT(*) AS total,
+                           SUM(CASE WHEN source_title = %s THEN 1 ELSE 0 END) AS generic_sources
+                    FROM studies
+                    WHERE id_review = %s
+                    """,
+                    ("Included example PDF collection", existing_review["id"]),
+                ).fetchone()
+                replace_old_fixture = (
+                    (
+                        existing_review["review_name"] == "Urban green spaces and wellbeing"
+                        and study_summary["total"] == 6
+                    )
+                    or (
+                        existing_review["review_name"] == DEMO_REVIEW_NAME
+                        and study_summary["total"] == len(EXPECTED_EXAMPLE_IDS)
+                        and study_summary["generic_sources"] == study_summary["total"]
+                    )
+                )
+
+            if replace_old_fixture:
                 _clear_demo_tables(db)
             else:
                 return
 
         pdfs = _numbered_example_pdfs(app)
-        first_progress = int(
-            ((len(SECOND_SCREENING_IDS) + len(EXTRACTION_IDS)) * 100)
-            / len(EXPECTED_EXAMPLE_IDS)
-        )
-        second_progress = int(
-            (len(EXTRACTION_IDS) * 100)
-            / (len(SECOND_SCREENING_IDS) + len(EXTRACTION_IDS))
-        )
+        fixture_studies, fixture_reasons = _load_demo_fixture(app)
+
+        resolved_first = len(SECOND_SCREENING_IDS | EXTRACTION_IDS | EXCLUDED_IDS)
+        first_progress = int((resolved_first * 100) / len(EXPECTED_EXAMPLE_IDS))
+        second_total = resolved_first
+        resolved_second = len(EXTRACTION_IDS | EXCLUDED_IDS)
+        second_progress = int((resolved_second * 100) / second_total)
 
         review_id = db.execute(
             """
@@ -311,64 +336,97 @@ def seed_demo(app):
             for name in DEMO_PARTICIPANTS
         ]
 
-        for hierarchy, reason in (
-            (1, "Outside the review scope"),
-            (2, "Wrong study design"),
-            (3, "No relevant outcome"),
-        ):
-            db.execute(
-                "INSERT INTO exclusion_reasons (id_review,hierarchy,reason) VALUES (%s,%s,%s)",
-                (review_id, hierarchy, reason),
-            )
+        reason_ids = {}
+        for item in sorted(fixture_reasons, key=lambda value: value["hierarchy"]):
+            reason_ids[int(item["hierarchy"])] = db.execute(
+                """
+                INSERT INTO exclusion_reasons (id_review,hierarchy,reason,is_active)
+                VALUES (%s,%s,%s,%s)
+                RETURNING id
+                """,
+                (
+                    review_id,
+                    int(item["hierarchy"]),
+                    item["reason"],
+                    1,
+                ),
+            ).fetchone()["id"]
 
+        excluded_reason_by_study = {}
         for study_id in sorted(EXPECTED_EXAMPLE_IDS):
             pdf_path = pdfs[study_id]
-            authors, year, title = _example_pdf_metadata(study_id, pdf_path.name)
+            metadata = fixture_studies.get(study_id)
+            if metadata:
+                doi = metadata.get("doi")
+                title = metadata.get("title")
+                authors = metadata.get("authors")
+                year = metadata.get("year")
+                abstract = metadata.get("abstract")
+                source_title = metadata.get("journal")
+                reason_hierarchy = metadata.get("exclusion_reason_hierarchy")
+            else:
+                authors, year, title = _example_pdf_metadata(pdf_path.name)
+                doi = None
+                abstract = (
+                    "This included PDF is retained as a full-text extraction example. "
+                    "Its metadata was not present in the supplied study export."
+                )
+                source_title = "Included example PDF"
+                reason_hierarchy = None
+
             if study_id in FIRST_SCREENING_IDS:
-                phase = "First screening"
                 first_decision = None
                 second_decision = None
+                exclusion_reason = None
             elif study_id in SECOND_SCREENING_IDS:
-                phase = "Second screening"
                 first_decision = "yes"
                 second_decision = None
-            else:
-                phase = "Studies to extract"
+                exclusion_reason = None
+            elif study_id in EXTRACTION_IDS:
                 first_decision = "yes"
                 second_decision = "yes"
+                exclusion_reason = None
+            else:
+                first_decision = "yes"
+                second_decision = "no"
+                exclusion_reason = reason_ids[int(reason_hierarchy)]
+                excluded_reason_by_study[study_id] = exclusion_reason
 
             db.execute(
                 """
                 INSERT INTO studies (
                     id, id_review, document_type, doi, title, authors, year,
                     abstract, source_title, file_name, file_data,
-                    first_screening_included, second_screening_included
+                    first_screening_included, second_screening_included,
+                    exclusion_reason
                 )
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
                     study_id,
                     review_id,
                     "Article",
-                    None,
+                    doi,
                     title,
                     authors,
                     year,
-                    (
-                        "Portfolio demo record based on the included full-text PDF. "
-                        f"It is prepared to demonstrate the {phase} workflow."
-                    ),
-                    "Included example PDF collection",
+                    abstract,
+                    source_title,
                     pdf_path.name,
                     pdf_path.read_bytes(),
                     first_decision,
                     second_decision,
+                    exclusion_reason,
                 ),
             )
 
         first_contributions = [0] * len(reviewer_ids)
-        for position, study_id in enumerate(sorted(SECOND_SCREENING_IDS | EXTRACTION_IDS)):
-            for reviewer_position in (position % len(reviewer_ids), (position + 1) % len(reviewer_ids)):
+        completed_first_ids = SECOND_SCREENING_IDS | EXTRACTION_IDS | EXCLUDED_IDS
+        for position, study_id in enumerate(sorted(completed_first_ids)):
+            for reviewer_position in (
+                position % len(reviewer_ids),
+                (position + 1) % len(reviewer_ids),
+            ):
                 db.execute(
                     """
                     INSERT INTO first_screening (id_review,id_reviewer,id_study,decision)
@@ -379,14 +437,28 @@ def seed_demo(app):
                 first_contributions[reviewer_position] += 1
 
         second_contributions = [0] * len(reviewer_ids)
-        for position, study_id in enumerate(sorted(EXTRACTION_IDS)):
-            for reviewer_position in (position % len(reviewer_ids), (position + 1) % len(reviewer_ids)):
+        completed_second_ids = EXTRACTION_IDS | EXCLUDED_IDS
+        for position, study_id in enumerate(sorted(completed_second_ids)):
+            decision = "no" if study_id in EXCLUDED_IDS else "yes"
+            reason = excluded_reason_by_study.get(study_id)
+            for reviewer_position in (
+                position % len(reviewer_ids),
+                (position + 1) % len(reviewer_ids),
+            ):
                 db.execute(
                     """
-                    INSERT INTO second_screening (id_review,id_reviewer,id_study,decision,reason)
+                    INSERT INTO second_screening (
+                        id_review,id_reviewer,id_study,decision,reason
+                    )
                     VALUES (%s,%s,%s,%s,%s)
                     """,
-                    (review_id, reviewer_ids[reviewer_position], study_id, "yes", None),
+                    (
+                        review_id,
+                        reviewer_ids[reviewer_position],
+                        study_id,
+                        decision,
+                        reason,
+                    ),
                 )
                 second_contributions[reviewer_position] += 1
 
