@@ -13,7 +13,7 @@
   {% if demo_mode %}
   <div class="demo-banner">
     <strong>Portfolio demo</strong>
-    <span>Fictional sample data · choose a participant to try the screening workflow.</span>
+    <span>{% block demo_banner_message %}Fictional sample data · choose a participant to try the screening workflow.{% endblock %}</span>
     <form method="post" action="{{ url_for('demo_reset') }}" class="m-0">
       <button class="btn btn-sm btn-outline-light" type="submit">Reset demo</button>
     </form>
