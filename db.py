@@ -174,22 +174,11 @@ DEMO_PARTICIPANTS = (
     "Jordan Blake",
 )
 
-# Records with complete exported metadata are used in the two interactive
-# screening queues. Studies with an exported exclusion reason remain visible
-# in the second-screening exclusions view.
-FIRST_SCREENING_IDS = {97, 98, 99, 104, 112, 113, 116}
-SECOND_SCREENING_IDS = {121, 126, 128, 129, 130, 143, 165}
-EXTRACTION_IDS = {6, 7, 9, 10, 168, 190}
-EXCLUDED_IDS = {
-    102, 106, 117, 118, 119, 120, 131, 134, 147,
-    151, 153, 154, 155, 161, 166, 169, 175, 177,
-}
-EXPECTED_EXAMPLE_IDS = (
-    FIRST_SCREENING_IDS
-    | SECOND_SCREENING_IDS
-    | EXTRACTION_IDS
-    | EXCLUDED_IDS
-)
+# These four PDFs predate the exported study spreadsheet. They remain useful
+# as full-text extraction examples, but are never shown without their PDF.
+PDF_ONLY_EXTRACTION_IDS = {6, 7, 9, 10}
+EXPORTED_EXTRACTION_IDS = {168, 190}
+EXTRACTION_IDS = PDF_ONLY_EXTRACTION_IDS | EXPORTED_EXTRACTION_IDS
 
 
 def _clear_demo_tables(db):
@@ -230,10 +219,10 @@ def _numbered_example_pdfs(app):
             if prefix.isdigit():
                 pdfs[int(prefix)] = pdf_path
 
-    missing = sorted(EXPECTED_EXAMPLE_IDS - set(pdfs))
+    missing = sorted(EXTRACTION_IDS - set(pdfs))
     if missing:
         raise RuntimeError(
-            "The portfolio demo is missing example PDFs for study IDs: "
+            "The portfolio demo is missing extraction PDFs for study IDs: "
             + ", ".join(str(study_id) for study_id in missing)
         )
     return pdfs
@@ -242,14 +231,26 @@ def _numbered_example_pdfs(app):
 def _load_demo_fixture(app):
     fixture_directory = Path(app.root_path) / "example_data"
     with (fixture_directory / "studies.json").open(encoding="utf-8") as handle:
-        study_payload = json.load(handle)
+        study_manifest = json.load(handle)
     with (fixture_directory / "exclusion_reasons.json").open(encoding="utf-8") as handle:
         reason_payload = json.load(handle)
 
-    studies = {
-        int(item["study_id"]): item
-        for item in study_payload["studies"]
-    }
+    studies = {}
+    for part_name in study_manifest["parts"]:
+        with (fixture_directory / part_name).open(encoding="utf-8") as handle:
+            part_payload = json.load(handle)
+        for item in part_payload["studies"]:
+            study_id = int(item["study_id"])
+            if study_id in studies:
+                raise RuntimeError(f"Duplicate study ID in demo fixture: {study_id}")
+            studies[study_id] = item
+
+    if len(studies) != int(study_manifest["row_count"]):
+        raise RuntimeError(
+            "The portfolio demo study fixture is incomplete: "
+            f"expected {study_manifest['row_count']}, found {len(studies)}"
+        )
+
     reasons = [
         item
         for item in reason_payload["exclusion_reasons"]
@@ -272,24 +273,18 @@ def seed_demo(app):
             replace_old_fixture = False
             if len(existing_reviews) == 1:
                 existing_review = existing_reviews[0]
-                study_summary = db.execute(
-                    """
-                    SELECT COUNT(*) AS total,
-                           SUM(CASE WHEN source_title = %s THEN 1 ELSE 0 END) AS generic_sources
-                    FROM studies
-                    WHERE id_review = %s
-                    """,
-                    ("Included example PDF collection", existing_review["id"]),
-                ).fetchone()
+                study_total = db.execute(
+                    "SELECT COUNT(*) AS total FROM studies WHERE id_review = %s",
+                    (existing_review["id"],),
+                ).fetchone()["total"]
                 replace_old_fixture = (
                     (
                         existing_review["review_name"] == "Urban green spaces and wellbeing"
-                        and study_summary["total"] == 6
+                        and study_total == 6
                     )
                     or (
                         existing_review["review_name"] == DEMO_REVIEW_NAME
-                        and study_summary["total"] == len(EXPECTED_EXAMPLE_IDS)
-                        and study_summary["generic_sources"] == study_summary["total"]
+                        and study_total == 38
                     )
                 )
 
@@ -300,11 +295,45 @@ def seed_demo(app):
 
         pdfs = _numbered_example_pdfs(app)
         fixture_studies, fixture_reasons = _load_demo_fixture(app)
+        fixture_ids = set(fixture_studies)
+        pdf_ids = set(pdfs)
+        all_study_ids = fixture_ids | PDF_ONLY_EXTRACTION_IDS
 
-        resolved_first = len(SECOND_SCREENING_IDS | EXTRACTION_IDS | EXCLUDED_IDS)
-        first_progress = int((resolved_first * 100) / len(EXPECTED_EXAMPLE_IDS))
-        second_total = resolved_first
-        resolved_second = len(EXTRACTION_IDS | EXCLUDED_IDS)
+        exported_with_pdf_ids = fixture_ids & pdf_ids
+        second_excluded_ids = {
+            study_id
+            for study_id in exported_with_pdf_ids
+            if fixture_studies[study_id].get("exclusion_reason_hierarchy")
+        }
+        second_pending_ids = (
+            exported_with_pdf_ids
+            - second_excluded_ids
+            - EXPORTED_EXTRACTION_IDS
+        )
+        first_rejected_ids = {
+            study_id
+            for study_id in fixture_ids - pdf_ids
+            if fixture_studies[study_id].get("exclusion_reason_hierarchy")
+        }
+        first_pending_ids = (
+            fixture_ids
+            - pdf_ids
+            - first_rejected_ids
+        )
+
+        # Second screening is intentionally PDF-only.
+        if any(study_id not in pdf_ids for study_id in second_pending_ids):
+            raise RuntimeError("A second-screening demo study is missing its PDF.")
+
+        resolved_first = (
+            len(first_rejected_ids)
+            + len(second_pending_ids)
+            + len(EXTRACTION_IDS)
+            + len(second_excluded_ids)
+        )
+        first_progress = int((resolved_first * 100) / len(all_study_ids))
+        second_total = len(second_pending_ids | EXTRACTION_IDS | second_excluded_ids)
+        resolved_second = len(EXTRACTION_IDS | second_excluded_ids)
         second_progress = int((resolved_second * 100) / second_total)
 
         review_id = db.execute(
@@ -337,24 +366,21 @@ def seed_demo(app):
         ]
 
         reason_ids = {}
+        reason_text_by_hierarchy = {}
         for item in sorted(fixture_reasons, key=lambda value: value["hierarchy"]):
-            reason_ids[int(item["hierarchy"])] = db.execute(
+            hierarchy = int(item["hierarchy"])
+            reason_text_by_hierarchy[hierarchy] = item["reason"]
+            reason_ids[hierarchy] = db.execute(
                 """
                 INSERT INTO exclusion_reasons (id_review,hierarchy,reason,is_active)
                 VALUES (%s,%s,%s,%s)
                 RETURNING id
                 """,
-                (
-                    review_id,
-                    int(item["hierarchy"]),
-                    item["reason"],
-                    1,
-                ),
+                (review_id, hierarchy, item["reason"], 1),
             ).fetchone()["id"]
 
         excluded_reason_by_study = {}
-        for study_id in sorted(EXPECTED_EXAMPLE_IDS):
-            pdf_path = pdfs[study_id]
+        for study_id in sorted(all_study_ids):
             metadata = fixture_studies.get(study_id)
             if metadata:
                 doi = metadata.get("doi")
@@ -365,7 +391,7 @@ def seed_demo(app):
                 source_title = metadata.get("journal")
                 reason_hierarchy = metadata.get("exclusion_reason_hierarchy")
             else:
-                authors, year, title = _example_pdf_metadata(pdf_path.name)
+                authors, year, title = _example_pdf_metadata(pdfs[study_id].name)
                 doi = None
                 abstract = (
                     "This included PDF is retained as a full-text extraction example. "
@@ -374,11 +400,24 @@ def seed_demo(app):
                 source_title = "Included example PDF"
                 reason_hierarchy = None
 
-            if study_id in FIRST_SCREENING_IDS:
+            pdf_path = pdfs.get(study_id)
+            file_name = pdf_path.name if pdf_path else None
+            file_data = pdf_path.read_bytes() if pdf_path else None
+            first_notes = None
+
+            if study_id in first_pending_ids:
                 first_decision = None
                 second_decision = None
                 exclusion_reason = None
-            elif study_id in SECOND_SCREENING_IDS:
+            elif study_id in first_rejected_ids:
+                first_decision = "no"
+                second_decision = None
+                exclusion_reason = None
+                first_notes = (
+                    "Demo exclusion: "
+                    + reason_text_by_hierarchy[int(reason_hierarchy)]
+                )
+            elif study_id in second_pending_ids:
                 first_decision = "yes"
                 second_decision = None
                 exclusion_reason = None
@@ -397,10 +436,10 @@ def seed_demo(app):
                 INSERT INTO studies (
                     id, id_review, document_type, doi, title, authors, year,
                     abstract, source_title, file_name, file_data,
-                    first_screening_included, second_screening_included,
-                    exclusion_reason
+                    first_screening_included, first_screening_notes,
+                    second_screening_included, exclusion_reason
                 )
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
                     study_id,
@@ -412,17 +451,19 @@ def seed_demo(app):
                     year,
                     abstract,
                     source_title,
-                    pdf_path.name,
-                    pdf_path.read_bytes(),
+                    file_name,
+                    file_data,
                     first_decision,
+                    first_notes,
                     second_decision,
                     exclusion_reason,
                 ),
             )
 
         first_contributions = [0] * len(reviewer_ids)
-        completed_first_ids = SECOND_SCREENING_IDS | EXTRACTION_IDS | EXCLUDED_IDS
+        completed_first_ids = all_study_ids - first_pending_ids
         for position, study_id in enumerate(sorted(completed_first_ids)):
+            decision = "no" if study_id in first_rejected_ids else "yes"
             for reviewer_position in (
                 position % len(reviewer_ids),
                 (position + 1) % len(reviewer_ids),
@@ -432,14 +473,14 @@ def seed_demo(app):
                     INSERT INTO first_screening (id_review,id_reviewer,id_study,decision)
                     VALUES (%s,%s,%s,%s)
                     """,
-                    (review_id, reviewer_ids[reviewer_position], study_id, "yes"),
+                    (review_id, reviewer_ids[reviewer_position], study_id, decision),
                 )
                 first_contributions[reviewer_position] += 1
 
         second_contributions = [0] * len(reviewer_ids)
-        completed_second_ids = EXTRACTION_IDS | EXCLUDED_IDS
+        completed_second_ids = EXTRACTION_IDS | second_excluded_ids
         for position, study_id in enumerate(sorted(completed_second_ids)):
-            decision = "no" if study_id in EXCLUDED_IDS else "yes"
+            decision = "no" if study_id in second_excluded_ids else "yes"
             reason = excluded_reason_by_study.get(study_id)
             for reviewer_position in (
                 position % len(reviewer_ids),
