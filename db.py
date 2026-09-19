@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 from pathlib import Path
 from typing import Optional
@@ -162,44 +163,253 @@ def init_db(app):
             connection.commit()
 
 
+DEMO_REVIEW_NAME = "Example 1: Degrowth in agricultural systems"
+DEMO_PARTICIPANTS = (
+    "Alex Morgan",
+    "Sam Rivera",
+    "Priya Shah",
+    "Daniel Kim",
+    "Lucía Torres",
+    "Jordan Blake",
+)
+FIRST_SCREENING_IDS = {6, 7, 9, 10, 97, 98, 99, 102, 104, 106, 112, 113}
+SECOND_SCREENING_IDS = {116, 117, 118, 119, 120, 121, 126, 128, 129, 130, 131, 134}
+EXTRACTION_IDS = {143, 147, 151, 153, 154, 155, 161, 165, 166, 168, 169, 175, 177, 190}
+EXPECTED_EXAMPLE_IDS = FIRST_SCREENING_IDS | SECOND_SCREENING_IDS | EXTRACTION_IDS
+
+SPECIAL_PDF_METADATA = {
+    118: ("Albert", 2020, "Albert 2020: sustainable de-growth"),
+    131: ("Steelman", None, "JPE 5850: Steelman"),
+    147: ("Demo study authors", None, "Study 2415"),
+    166: (
+        "Schiller-Merkens",
+        2022,
+        "Prefiguring an alternative economy: understanding prefigurative organizing and its struggles",
+    ),
+    169: (
+        "Schindler et al.",
+        2023,
+        "Deindustrialisation and the politics of subordinate degrowth: the case of Greater Buenos Aires",
+    ),
+    190: (
+        "Tzekou and Gritzas",
+        2023,
+        "The interconnection between ecology",
+    ),
+}
+
+
+def _clear_demo_tables(db):
+    for table in (
+        "second_screening_conflicts", "second_screening",
+        "first_screening_conflicts", "first_screening",
+        "studies", "exclusion_reasons", "reviewers", "review",
+    ):
+        db.execute(f"DELETE FROM {table}")
+    if isinstance(db, SQLiteConnection):
+        db.execute(
+            "DELETE FROM sqlite_sequence WHERE name IN "
+            "('review','reviewers','studies','exclusion_reasons')"
+        )
+
+
+def _example_pdf_metadata(study_id: int, filename: str):
+    if study_id in SPECIAL_PDF_METADATA:
+        return SPECIAL_PDF_METADATA[study_id]
+
+    label = Path(filename).stem.split("_", 1)[1]
+    match = re.match(r"^(?P<authors>.+?)\s+(?P<year>(?:19|20)\d{2})\s+-\s+(?P<title>.+)$", label)
+    if match:
+        return (
+            match.group("authors"),
+            int(match.group("year")),
+            match.group("title"),
+        )
+    return ("Demo study authors", None, label.replace("-", " "))
+
+
+def _numbered_example_pdfs(app):
+    pdf_directory = Path(app.root_path) / "example_pdfs"
+    pdfs = {}
+    if pdf_directory.is_dir():
+        for pdf_path in pdf_directory.glob("*.pdf"):
+            prefix = pdf_path.name.split("_", 1)[0]
+            if prefix.isdigit():
+                pdfs[int(prefix)] = pdf_path
+
+    missing = sorted(EXPECTED_EXAMPLE_IDS - set(pdfs))
+    if missing:
+        raise RuntimeError(
+            "The portfolio demo is missing example PDFs for study IDs: "
+            + ", ".join(str(study_id) for study_id in missing)
+        )
+    return pdfs
+
+
 def seed_demo(app):
-    """Seed a fictional review so the first page is useful immediately."""
+    """Seed a collaborative review backed by the numbered PDFs in example_pdfs."""
     if not app.config.get("DEMO_MODE"):
         return
+
     with app.app_context():
         db = get_db()
-        if db.execute("SELECT COUNT(*) AS c FROM review").fetchone()["c"]:
-            return
+        existing_reviews = db.execute(
+            "SELECT id, review_name FROM review ORDER BY id"
+        ).fetchall()
+        if existing_reviews:
+            # Transparently replace only the original six-record fixture. Any
+            # user-created demo content is left untouched and can be reset from
+            # the interface when desired.
+            if (
+                len(existing_reviews) == 1
+                and existing_reviews[0]["review_name"] == "Urban green spaces and wellbeing"
+                and db.execute(
+                    "SELECT COUNT(*) AS c FROM studies WHERE id_review = %s",
+                    (existing_reviews[0]["id"],),
+                ).fetchone()["c"] == 6
+            ):
+                _clear_demo_tables(db)
+            else:
+                return
+
+        pdfs = _numbered_example_pdfs(app)
+        first_progress = int(
+            ((len(SECOND_SCREENING_IDS) + len(EXTRACTION_IDS)) * 100)
+            / len(EXPECTED_EXAMPLE_IDS)
+        )
+        second_progress = int(
+            (len(EXTRACTION_IDS) * 100)
+            / (len(SECOND_SCREENING_IDS) + len(EXTRACTION_IDS))
+        )
+
         review_id = db.execute(
-            "INSERT INTO review (review_name,participants_number,participants_name,two_reviewer_consensus,password) VALUES (%s,%s,%s,%s,%s) RETURNING id",
-            ("Urban green spaces and wellbeing", 2, "Alex Morgan; Sam Rivera", "yes", "demo"),
+            """
+            INSERT INTO review (
+                review_name, participants_number, participants_name,
+                first_screening_progress, second_screening_progress,
+                two_reviewer_consensus, password
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id
+            """,
+            (
+                DEMO_REVIEW_NAME,
+                len(DEMO_PARTICIPANTS),
+                "; ".join(DEMO_PARTICIPANTS),
+                first_progress,
+                second_progress,
+                "yes",
+                "demo",
+            ),
         ).fetchone()["id"]
+
         reviewer_ids = [
-            db.execute("INSERT INTO reviewers (id_review,reviewer_name) VALUES (%s,%s) RETURNING id", (review_id, name)).fetchone()["id"]
-            for name in ("Alex Morgan", "Sam Rivera")
-        ]
-        reason_ids = [
-            db.execute("INSERT INTO exclusion_reasons (id_review,hierarchy,reason) VALUES (%s,%s,%s) RETURNING id", (review_id, n, reason)).fetchone()["id"]
-            for n, reason in ((1, "Wrong population"), (2, "Wrong intervention"), (3, "No relevant outcome"))
-        ]
-        rows = [
-            ("10.1000/demo.001", "Urban parks and adult wellbeing", "Taylor et al.", 2023, "A longitudinal study of park access and wellbeing.", "yes", "yes", None),
-            ("10.1000/demo.002", "Green corridors and community health", "Lee and Silva", 2022, "Mixed-method evidence from three European cities.", "yes", "no", reason_ids[2]),
-            ("10.1000/demo.003", "Nature exposure: a systematic review", "Okafor et al.", 2021, "A synthesis of nature exposure interventions.", "yes", None, None),
-            ("10.1000/demo.004", "Playgrounds and childhood activity", "García et al.", 2020, "Physical activity outcomes after playground renovations.", "conflict", None, None),
-            ("10.1000/demo.005", "Rural forests and biodiversity", "Nielsen", 2019, "Biodiversity outcomes in managed rural forests.", "no", None, None),
-            ("10.1000/demo.006", "Pocket parks in dense neighbourhoods", "Chen et al.", 2024, "A quasi-experimental evaluation of pocket parks.", None, None, None),
-        ]
-        study_ids = [
             db.execute(
-                "INSERT INTO studies (id_review,document_type,doi,title,authors,year,abstract,source_title,first_screening_included,second_screening_included,exclusion_reason) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
-                (review_id, "Article", doi, title, authors, year, abstract, "Demo Research Journal", first, second, reason),
+                "INSERT INTO reviewers (id_review,reviewer_name) VALUES (%s,%s) RETURNING id",
+                (review_id, name),
             ).fetchone()["id"]
-            for doi, title, authors, year, abstract, first, second, reason in rows
+            for name in DEMO_PARTICIPANTS
         ]
-        for reviewer, decision in zip(reviewer_ids, ("yes", "no")):
-            db.execute("INSERT INTO first_screening (id_review,id_reviewer,id_study,decision) VALUES (%s,%s,%s,%s)", (review_id, reviewer, study_ids[3], decision))
-            db.execute("INSERT INTO first_screening_conflicts (id_review,id_reviewer,id_study,decision) VALUES (%s,%s,%s,%s)", (review_id, reviewer, study_ids[3], decision))
+
+        for hierarchy, reason in (
+            (1, "Outside the review scope"),
+            (2, "Wrong study design"),
+            (3, "No relevant outcome"),
+        ):
+            db.execute(
+                "INSERT INTO exclusion_reasons (id_review,hierarchy,reason) VALUES (%s,%s,%s)",
+                (review_id, hierarchy, reason),
+            )
+
+        for study_id in sorted(EXPECTED_EXAMPLE_IDS):
+            pdf_path = pdfs[study_id]
+            authors, year, title = _example_pdf_metadata(study_id, pdf_path.name)
+            if study_id in FIRST_SCREENING_IDS:
+                phase = "First screening"
+                first_decision = None
+                second_decision = None
+            elif study_id in SECOND_SCREENING_IDS:
+                phase = "Second screening"
+                first_decision = "yes"
+                second_decision = None
+            else:
+                phase = "Studies to extract"
+                first_decision = "yes"
+                second_decision = "yes"
+
+            db.execute(
+                """
+                INSERT INTO studies (
+                    id, id_review, document_type, doi, title, authors, year,
+                    abstract, source_title, file_name, file_data,
+                    first_screening_included, second_screening_included
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    study_id,
+                    review_id,
+                    "Article",
+                    None,
+                    title,
+                    authors,
+                    year,
+                    (
+                        "Portfolio demo record based on the included full-text PDF. "
+                        f"It is prepared to demonstrate the {phase} workflow."
+                    ),
+                    "Included example PDF collection",
+                    pdf_path.name,
+                    pdf_path.read_bytes(),
+                    first_decision,
+                    second_decision,
+                ),
+            )
+
+        first_contributions = [0] * len(reviewer_ids)
+        for position, study_id in enumerate(sorted(SECOND_SCREENING_IDS | EXTRACTION_IDS)):
+            for reviewer_position in (position % len(reviewer_ids), (position + 1) % len(reviewer_ids)):
+                db.execute(
+                    """
+                    INSERT INTO first_screening (id_review,id_reviewer,id_study,decision)
+                    VALUES (%s,%s,%s,%s)
+                    """,
+                    (review_id, reviewer_ids[reviewer_position], study_id, "yes"),
+                )
+                first_contributions[reviewer_position] += 1
+
+        second_contributions = [0] * len(reviewer_ids)
+        for position, study_id in enumerate(sorted(EXTRACTION_IDS)):
+            for reviewer_position in (position % len(reviewer_ids), (position + 1) % len(reviewer_ids)):
+                db.execute(
+                    """
+                    INSERT INTO second_screening (id_review,id_reviewer,id_study,decision,reason)
+                    VALUES (%s,%s,%s,%s,%s)
+                    """,
+                    (review_id, reviewer_ids[reviewer_position], study_id, "yes", None),
+                )
+                second_contributions[reviewer_position] += 1
+
+        for position, reviewer_id in enumerate(reviewer_ids):
+            db.execute(
+                """
+                UPDATE reviewers
+                SET first_screening_contribution = %s,
+                    second_screening_contribution = %s
+                WHERE id = %s
+                """,
+                (
+                    first_contributions[position],
+                    second_contributions[position],
+                    reviewer_id,
+                ),
+            )
+
+        if not _database_url(app).startswith("sqlite:///"):
+            db.execute(
+                "SELECT setval(pg_get_serial_sequence('studies','id'), "
+                "(SELECT MAX(id) FROM studies))"
+            )
         db.commit()
 
 
@@ -209,12 +419,6 @@ def reset_demo(app):
         raise RuntimeError("Demo reset is disabled.")
     with app.app_context():
         db = get_db()
-        for table in (
-            "second_screening_conflicts", "second_screening",
-            "first_screening_conflicts", "first_screening",
-            "studies", "exclusion_reasons", "reviewers", "review",
-        ):
-            db.execute(f"DELETE FROM {table}")
+        _clear_demo_tables(db)
         db.commit()
     seed_demo(app)
-
