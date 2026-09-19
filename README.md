@@ -26,10 +26,6 @@ No Python, PostgreSQL, Docker, Tailscale, passwords, or API keys are required.
 
 For Python and Docker options, see [Running the demo](#running-the-demo).
 
-### What to look for
-
-A simple way to explore the workflow is to make screening decisions as different reviewers, generate a disagreement, resolve the resulting conflict, and then check how the review progress is updated.
-
 ## Project purpose
 
 The application was originally conceived to support the specific needs of a real systematic review project.
