@@ -13,6 +13,23 @@ The goal of this project is to demonstrate the ability to **design a software sy
 
 ![SystRev Tool demo](images/systrev-demo.gif)
 
+## Try the demo
+
+The fastest way to test SystRev Tool on Windows:
+
+1. Open the [latest release](https://github.com/DiegoJSN/syst_rev_tool/releases/latest).
+2. Under **Assets**, download `SystRevTool-Demo-Windows.zip`.
+3. Extract the ZIP file.
+4. Run `SystRevTool-Demo.exe`.
+
+No Python, PostgreSQL, Docker, Tailscale, passwords, or API keys are required.
+
+For Python and Docker options, see [Running the demo](#running-the-demo).
+
+### What to look for
+
+A simple way to explore the workflow is to make screening decisions as different reviewers, generate a disagreement, resolve the resulting conflict, and then check how the review progress is updated.
+
 ## Project purpose
 
 The application was originally conceived to support the specific needs of a real systematic review project.
@@ -54,7 +71,6 @@ This made it possible to provide the AI with a clear structural model from the b
 - Implementation of database operations and review workflows
 - Code modification and refactoring following iterative instructions
 - Assistance with testing, packaging, deployment, and documentation
-
 
 ## Main features
 
@@ -104,36 +120,6 @@ The screening workflow is based on independent reviewer decisions that are subse
 When decisions are compatible, the application automatically determines the screening outcome. When reviewers disagree, the study is moved to a dedicated conflict-resolution workflow where the final decision can be recorded explicitly.
 
 This logic was defined before implementation so that the AI could generate the backend around a consistent relational model and a clearly specified set of business rules.
-
-## Demo version vs. full version
-
-### Demo branch
-
-The `demo` branch is designed for portfolio and evaluation purposes.
-
-It uses:
-
-- **SQLite** for zero-configuration local storage
-- Fictional example studies
-- Fictional reviewer data
-- Local persistent screening progress
-- Reset functionality
-- No production credentials
-- No private infrastructure
-
-It can be run using a Windows executable, Python, or Docker.
-
-### Full version
-
-The complete version in the `main` branch uses:
-
-- **PostgreSQL** as the central relational database
-- **Tailscale** for private access between authorized devices
-- A shared multi-user workflow
-- Centralized review data
-- Persistent full-text documents and reviewer decisions
-
-The full version was designed for actual collaborative use in a systematic review project.
 
 ## Technology stack
 
@@ -188,6 +174,36 @@ Although the implementation code was AI-generated, the project required defining
 
 These elements were progressively specified, tested, and refined through AI-assisted development.
 
+## Demo version vs. full version
+
+### Demo branch
+
+The `demo` branch is designed for portfolio and evaluation purposes.
+
+It uses:
+
+- **SQLite** for zero-configuration local storage
+- Fictional example studies
+- Fictional reviewer data
+- Local persistent screening progress
+- Reset functionality
+- No production credentials
+- No private infrastructure
+
+It can be run using a Windows executable, Python, or Docker.
+
+### Full version
+
+The complete version in the `main` branch uses:
+
+- **PostgreSQL** as the central relational database
+- **Tailscale** for private access between authorized devices
+- A shared multi-user workflow
+- Centralized review data
+- Persistent full-text documents and reviewer decisions
+
+The full version was designed for actual collaborative use in a systematic review project.
+
 ## What you can test
 
 The demo allows you to:
@@ -206,7 +222,7 @@ The demo allows you to:
 - Close the demo and continue later with the locally stored state
 - Restore the fictional initial dataset with **Reset demo**
 
-## How to try the demo
+## Running the demo
 
 No PostgreSQL server, Tailscale network, passwords, or API keys are required.
 
@@ -277,7 +293,6 @@ http://127.0.0.1:5000
 
 To stop the application, press `Ctrl+C`.
 
-
 ## Limitations of the demo
 
 The demo is intended only for portfolio and evaluation purposes.
@@ -300,4 +315,3 @@ This project is presented as a portfolio example of **AI-assisted software devel
 The software implementation was generated using AI under my direction. The system concept, domain model, workflows, requirements, relational structure, business logic, validation criteria, and iterative development decisions were defined and supervised by me.
 
 The demo is not intended to replace established systematic review platforms or to be used without appropriate validation in production research environments.
-
