@@ -6,7 +6,7 @@ on:
       release_tag:
         description: "Existing release tag that will receive the executable"
         required: true
-        default: "v1.0.2"
+        default: "v1.0.5"
   push:
     tags:
       - "demo-v*"
