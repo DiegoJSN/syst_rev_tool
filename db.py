@@ -215,6 +215,10 @@ PDF_ONLY_EXTRACTION_IDS = {6, 7, 9, 10}
 EXPORTED_EXTRACTION_IDS = {168, 190}
 EXTRACTION_IDS = PDF_ONLY_EXTRACTION_IDS | EXPORTED_EXTRACTION_IDS
 
+# The exported spreadsheet repeats the same publications under these IDs.
+# Keep the PDF-backed extraction IDs requested for the portfolio demo.
+DUPLICATE_EXPORTED_STUDY_IDS = {88, 91, 94}
+
 PDF_ONLY_STUDY_METADATA = {
     6: {
         "title": "Degrowth as a plausible pathway for food systems transformation",
@@ -450,10 +454,11 @@ def seed_demo(app):
         pdfs = _numbered_example_pdfs(app)
         fixture_studies, fixture_reasons = _load_demo_fixture(app)
         fixture_ids = set(fixture_studies)
+        deduplicated_fixture_ids = fixture_ids - DUPLICATE_EXPORTED_STUDY_IDS
         pdf_ids = set(pdfs)
-        all_study_ids = fixture_ids | PDF_ONLY_EXTRACTION_IDS
+        all_study_ids = deduplicated_fixture_ids | PDF_ONLY_EXTRACTION_IDS
 
-        exported_with_pdf_ids = fixture_ids & pdf_ids
+        exported_with_pdf_ids = deduplicated_fixture_ids & pdf_ids
         second_excluded_ids = {
             study_id
             for study_id in exported_with_pdf_ids
@@ -466,11 +471,11 @@ def seed_demo(app):
         )
         first_rejected_ids = {
             study_id
-            for study_id in fixture_ids - pdf_ids
+            for study_id in deduplicated_fixture_ids - pdf_ids
             if fixture_studies[study_id].get("exclusion_reason_hierarchy")
         }
         first_pending_ids = (
-            fixture_ids
+            deduplicated_fixture_ids
             - pdf_ids
             - first_rejected_ids
         )
