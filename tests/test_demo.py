@@ -36,6 +36,52 @@ class DemoSmokeTest(unittest.TestCase):
         self.assertIn(b"6 participants", response.data)
         self.assertIn(b"Portfolio demo", response.data)
 
+    def test_exported_metadata_and_exclusion_reasons(self):
+        from db import get_db
+
+        with self.app.app_context():
+            db = get_db()
+            study = db.execute(
+                """
+                SELECT doi, title, authors, year, abstract, source_title
+                FROM studies
+                WHERE id = %s
+                """,
+                (97,),
+            ).fetchone()
+            self.assertEqual(study["doi"], "10.1016/j.jclepro.2022.130632")
+            self.assertEqual(
+                study["title"],
+                "Taking a whole-of-system approach to food packaging reduction",
+            )
+            self.assertIn("Chakori", study["authors"])
+            self.assertEqual(study["year"], 2022)
+            self.assertGreater(len(study["abstract"]), 500)
+            self.assertEqual(study["source_title"], "JOURNAL OF CLEANER PRODUCTION")
+
+            reasons = db.execute(
+                """
+                SELECT hierarchy, reason
+                FROM exclusion_reasons
+                ORDER BY hierarchy
+                """
+            ).fetchall()
+            self.assertEqual([row["hierarchy"] for row in reasons], [1, 2, 3, 4])
+            self.assertIn("Wrong Language", reasons[0]["reason"])
+            self.assertIn("Wrong Conceptual focus", reasons[3]["reason"])
+
+            excluded = db.execute(
+                """
+                SELECT s.second_screening_included, er.hierarchy
+                FROM studies s
+                JOIN exclusion_reasons er ON er.id = s.exclusion_reason
+                WHERE s.id = %s
+                """,
+                (117,),
+            ).fetchone()
+            self.assertEqual(excluded["second_screening_included"], "no")
+            self.assertEqual(excluded["hierarchy"], 3)
+
     def test_numbered_pdfs_and_phase_examples(self):
         from db import get_db
 
@@ -65,7 +111,9 @@ class DemoSmokeTest(unittest.TestCase):
                 (review["id"],),
             ).fetchall()
             self.assertEqual({row["id"] for row in studies}, self.EXPECTED_IDS)
-            self.assertTrue(all(row["file_name"].startswith(f"{row['id']}_") for row in studies))
+            self.assertTrue(
+                all(row["file_name"].startswith(f"{row['id']}_") for row in studies)
+            )
             self.assertTrue(all(row["file_size"] > 0 for row in studies))
 
             first_pending = sum(
@@ -81,7 +129,15 @@ class DemoSmokeTest(unittest.TestCase):
                 and row["second_screening_included"] == "yes"
                 for row in studies
             )
-            self.assertEqual((first_pending, second_pending, to_extract), (12, 12, 14))
+            excluded = sum(
+                row["first_screening_included"] == "yes"
+                and row["second_screening_included"] == "no"
+                for row in studies
+            )
+            self.assertEqual(
+                (first_pending, second_pending, to_extract, excluded),
+                (7, 7, 6, 18),
+            )
 
     def test_dashboard_and_export(self):
         self.assertEqual(self.client.get("/1_main.html").status_code, 200)
