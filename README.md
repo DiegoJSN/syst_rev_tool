@@ -6,6 +6,10 @@
 
 Aplicación web colaborativa para gestionar la selección de estudios de una revisión sistemática. Permite importar referencias de Web of Science o Scopus, revisar títulos y resúmenes, comparar decisiones entre revisores, resolver conflictos, registrar motivos de exclusión y exportar resultados a Excel.
 
+Este proyecto se desarrolló para cubrir las necesidades personalizadas de un proyecto de revisión sistemática, adaptando el flujo de trabajo a sus fases de selección, coordinación entre revisores y extracción de estudios.
+
+La inteligencia artificial se utilizó como herramienta de apoyo durante su elaboración, especialmente para asistir en tareas de desarrollo, depuración y documentación, manteniendo la revisión y validación humana de las decisiones técnicas.
+
 La rama **`demo`** utiliza una base de datos local con contenido de ejemplo para que cualquiera pueda probar el flujo sin cuentas ni credenciales.
 
 El proyecto completo de la rama **`main`** se despliega como aplicación web con **PostgreSQL** y utiliza **Tailscale** para conectar de forma privada distintos equipos, permitiendo que varias personas trabajen juntas sobre la misma revisión.
