@@ -1245,7 +1245,7 @@ def create_app() -> Flask:
         if not row or not row["file_name"]:
             abort(404)
 
-        if row.get("file_data"):
+        if row["file_data"]:
             return send_file(
                 BytesIO(row["file_data"]),
                 mimetype="application/pdf",
